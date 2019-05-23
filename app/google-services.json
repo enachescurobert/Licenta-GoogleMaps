@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "858944024575",
+    "firebase_url": "https://maps-integration-app.firebaseio.com",
+    "project_id": "maps-integration-app",
+    "storage_bucket": "maps-integration-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:858944024575:android:a1d1ce9b8c3681aa",
+        "android_client_info": {
+          "package_name": "com.codingwithmitch.googlemaps2018"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "858944024575-14npfhdgijriq439gdvj7r56499g38v2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0q_wBft0yD0AgOwHiJIBgN9c2dkjkW9M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "858944024575-14npfhdgijriq439gdvj7r56499g38v2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
