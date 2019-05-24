@@ -3,6 +3,7 @@ package com.codingwithmitch.googlemaps2018.ui;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Camera;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,6 +32,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -206,7 +208,8 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
                                 userLocation.getUser().getUsername() + "?";
                     }
 
-                    int avatar = R.drawable.cwm_logo; //set the default avatar
+                    //int avatar = R.drawable.cwm_logo; //set the default avatar
+                    int avatar = R.drawable.scooter; //set the default avatar
                     try{
                         avatar = Integer.parseInt(userLocation.getUser().getAvatar());
                     }catch (NumberFormatException e){
@@ -324,6 +327,21 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onMapReady(GoogleMap map) {
+
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = map.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            getActivity().getApplicationContext(), R.raw.map_style));
+
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.");
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.e(TAG, "Can't find style. Error: ", e);
+        }
+
         map.addMarker(new MarkerOptions().position(new LatLng(44.4474731, 26.0489703)).title("P15 Regie"));
         map.getUiSettings().setZoomControlsEnabled(true);
 

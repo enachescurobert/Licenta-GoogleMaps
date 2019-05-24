@@ -8,4 +8,12 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <!-- Base application theme. -->
+    <style name="MapsBlackTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/DarkGreyMaps</item>
+        <item name="colorPrimaryDark">@color/BlackMaps</item>
+        <item name="colorAccent">@color/transparentGreyMaps</item>
+    </style>
+
 </resources>

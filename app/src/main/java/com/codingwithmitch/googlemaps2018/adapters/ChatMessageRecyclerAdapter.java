@@ -43,10 +43,10 @@ public class ChatMessageRecyclerAdapter extends RecyclerView.Adapter<ChatMessage
 
 
         if(FirebaseAuth.getInstance().getUid().equals(mMessages.get(position).getUser().getUser_id())){
-            ((ViewHolder)holder).username.setTextColor(ContextCompat.getColor(mContext, R.color.green1));
+            ((ViewHolder)holder).username.setTextColor(ContextCompat.getColor(mContext, R.color.green2));
         }
         else{
-            ((ViewHolder)holder).username.setTextColor(ContextCompat.getColor(mContext, R.color.blue2));
+            ((ViewHolder)holder).username.setTextColor(ContextCompat.getColor(mContext, R.color.green1));
         }
 
         ((ViewHolder)holder).username.setText(mMessages.get(position).getUser().getUsername());
