@@ -9,6 +9,7 @@ import com.codingwithmitch.googlemaps2018.R;
 import com.codingwithmitch.googlemaps2018.models.ClusterMarker;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
@@ -72,5 +73,19 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
 //        }
 
     }
+
+
+    //This is the method we will use to actually update the position of the markers on the map
+    /**
+     * Update the GPS coordinate of a ClusterItem
+     * @param clusterMarker
+     */
+    public void setUpdateMarker(ClusterMarker clusterMarker) {
+        Marker marker = getMarker(clusterMarker);
+        if (marker != null) {
+            marker.setPosition(clusterMarker.getPosition());
+        }
+    }
+
 }
 

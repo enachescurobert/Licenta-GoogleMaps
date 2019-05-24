@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Camera;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -31,7 +32,12 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
@@ -40,7 +46,9 @@ import static com.codingwithmitch.googlemaps2018.Constants.MAPVIEW_BUNDLE_KEY;
 
 public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
+    //constants
     private static final String TAG = "UserListFragment";
+    private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
 
     //widgets
     private RecyclerView mUserListRecyclerView;
@@ -59,6 +67,10 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     private ClusterManager mClusterManager;
     private MyClusterManagerRenderer mClusterManagerRenderer;
     private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
+    //Handler + Runnable -> Responsible for making requests every 3 seconds
+    private Handler mHandler = new Handler();
+    private Runnable mRunnable;
+
 
 
     public static UserListFragment newInstance() {
@@ -98,6 +110,71 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         setUserPosition();
 
         return view;
+    }
+
+
+    //responsible for actually start the Runnable
+    private void startUserLocationsRunnable(){
+        Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
+        mHandler.postDelayed(mRunnable = new Runnable() {
+            @Override
+            public void run() {
+                retrieveUserLocations();
+                //to recursively call the method << retrieveUserLocations() >> every 3 seconds
+                mHandler.postDelayed(mRunnable, LOCATION_UPDATE_INTERVAL);
+            }
+        }, LOCATION_UPDATE_INTERVAL);
+    }
+
+    private void stopLocationUpdates(){
+        mHandler.removeCallbacks(mRunnable);
+    }
+
+    private void retrieveUserLocations(){
+        Log.d(TAG, "retrieveUserLocations: retrieving location of all users in the chatroom.");
+
+        try{
+            for(final ClusterMarker clusterMarker: mClusterMarkers){
+
+                DocumentReference userLocationRef = FirebaseFirestore.getInstance()
+                        .collection(getString(R.string.collection_user_locations))
+                        .document(clusterMarker.getUser().getUser_id());
+
+                userLocationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if(task.isSuccessful()){
+
+                            final UserLocation updatedUserLocation = task.getResult().toObject(UserLocation.class);
+
+                            // update the location
+                            for (int i = 0; i < mClusterMarkers.size(); i++) {
+                                try {
+                                    if (mClusterMarkers.get(i).getUser().getUser_id().equals(updatedUserLocation.getUser().getUser_id())) {
+
+                                        LatLng updatedLatLng = new LatLng(
+                                                updatedUserLocation.getGeoPoint().getLatitude(),
+                                                updatedUserLocation.getGeoPoint().getLongitude()
+                                        );
+
+                                        mClusterMarkers.get(i).setPosition(updatedLatLng);
+                                        mClusterManagerRenderer.setUpdateMarker(mClusterMarkers.get(i));
+
+                                    }
+
+
+                                } catch (NullPointerException e) {
+                                    Log.e(TAG, "retrieveUserLocations: NullPointerException: " + e.getMessage());
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }catch (IllegalStateException e){
+            Log.e(TAG, "retrieveUserLocations: Fragment was destroyed during Firestore query. Ending query." + e.getMessage() );
+        }
+
     }
 
     private void addMapMarkers(){
@@ -147,7 +224,9 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
                     //to actually add the marker
                     mClusterManager.addItem(newClusterMarker);
+                    //the cluster manager is the one who is actually displayed on the map
                     mClusterMarkers.add(newClusterMarker);
+                    //the cluster marker is just a tool for us to keep the track of the markers on the map
 
                 }catch (NullPointerException e){
                     Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
@@ -226,6 +305,9 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     public void onResume() {
         super.onResume();
         mMapView.onResume();
+
+        //This is called to start the service runnable
+        startUserLocationsRunnable();
     }
 
     @Override
@@ -280,6 +362,10 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
     public void onDestroy() {
         mMapView.onDestroy();
         super.onDestroy();
+
+        //This is called to stop the service runnable and the handler in the background
+        // when the activity is closed
+        stopLocationUpdates();
     }
 
     @Override

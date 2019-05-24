@@ -1,6 +1,7 @@
 package com.codingwithmitch.googlemaps2018.ui;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -32,6 +33,7 @@ import com.codingwithmitch.googlemaps2018.adapters.ChatroomRecyclerAdapter;
 import com.codingwithmitch.googlemaps2018.models.Chatroom;
 import com.codingwithmitch.googlemaps2018.models.User;
 import com.codingwithmitch.googlemaps2018.models.UserLocation;
+import com.codingwithmitch.googlemaps2018.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -104,6 +106,38 @@ public class MainActivity extends AppCompatActivity implements
 
         initSupportActionBar();
         initChatroomRecyclerView();
+    }
+
+    //
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            //the way we start the service is with an intent
+            Intent serviceIntent = new Intent(this, LocationService.class);
+            //        this.startService(serviceIntent);
+
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+
+                //if we don't call the startForegroundService
+                //when the service goes to the background, it's going to stop
+                MainActivity.this.startForegroundService(serviceIntent);
+            }else{
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    //this methods just checks if the service is running and returns true/false
+    private boolean isLocationServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.codingwithmitch.googledirectionstest.services.LocationService".equals(service.service.getClassName())) {
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
     }
 
     //We need to retrieve the User details for the authenticated user and set it to
@@ -183,6 +217,10 @@ public class MainActivity extends AppCompatActivity implements
                     mUserLocation.setGeoPoint(geoPoint);
                     mUserLocation.setTimestamp(null);
                     saveUserLocation();
+                    //we will start the service after get last known location is called
+                    //because that means that we have all permissions and what we need
+                    startLocationService();
+
                 }
             }
         });
