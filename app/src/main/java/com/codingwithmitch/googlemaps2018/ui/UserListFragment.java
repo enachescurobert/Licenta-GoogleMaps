@@ -364,6 +364,8 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
             return;
         }
         map.setMyLocationEnabled(true);
+        //map.getUiSettings().setMyLocationButtonEnabled(false);
+
         mGoogleMap = map;
         //setCameraView();
 
