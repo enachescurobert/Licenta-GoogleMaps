@@ -21,11 +21,13 @@ import com.codingwithmitch.googlemaps2018.adapters.ChatMessageRecyclerAdapter;
 import com.codingwithmitch.googlemaps2018.models.ChatMessage;
 import com.codingwithmitch.googlemaps2018.models.Chatroom;
 import com.codingwithmitch.googlemaps2018.models.User;
+import com.codingwithmitch.googlemaps2018.models.UserLocation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -57,6 +59,9 @@ public class ChatroomActivity extends AppCompatActivity implements
     private Set<String> mMessageIds = new HashSet<>();
     private ArrayList<User> mUserList = new ArrayList<>();
     private UserListFragment mUserListFragment;
+
+    //create a list of user locations
+    private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
 
 
     @Override
@@ -135,12 +140,41 @@ public class ChatroomActivity extends AppCompatActivity implements
                             for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                                 User user = doc.toObject(User.class);
                                 mUserList.add(user);
+
+                                //
+                                getUserLocation(user);
+
                             }
 
                             Log.d(TAG, "onEvent: user list size: " + mUserList.size());
                         }
                     }
                 });
+    }
+
+    //this methos is for getting the location for each user
+    private void getUserLocation(User user){
+        DocumentReference locationRef = mDb
+                .collection(getString(R.string.collection_user_locations))
+                .document(user.getUser_id());
+
+        locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    //if the task is successful
+                    //we can retrieve a result
+                    if(task.getResult().toObject(UserLocation.class) != null){
+                        //if there is actually a location coordinate of the user in the DB
+                        //<<which it should have (because the user has to accept GPS)>>
+                        //add that location
+                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                        //now we need to pass those locations in the fragment
+                        //that will be done in the inflateUserListFragment() method
+                    }
+                }
+            }
+        });
     }
 
     private void initChatroomRecyclerView(){
@@ -215,6 +249,11 @@ public class ChatroomActivity extends AppCompatActivity implements
         UserListFragment fragment = UserListFragment.newInstance();
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList(getString(R.string.intent_user_list), mUserList);
+
+        //in order to pass those locations to a fragment
+        //we need to attach them to a bundle
+        bundle.putParcelableArrayList(getString(R.string.intent_user_locations), mUserLocations);
+
         fragment.setArguments(bundle);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();

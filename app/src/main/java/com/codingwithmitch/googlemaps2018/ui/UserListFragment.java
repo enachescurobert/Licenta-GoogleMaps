@@ -1,7 +1,9 @@
 package com.codingwithmitch.googlemaps2018.ui;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Camera;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -9,6 +11,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,14 +19,20 @@ import android.view.ViewGroup;
 
 import com.codingwithmitch.googlemaps2018.R;
 import com.codingwithmitch.googlemaps2018.adapters.UserRecyclerAdapter;
+import com.codingwithmitch.googlemaps2018.models.ClusterMarker;
 import com.codingwithmitch.googlemaps2018.models.User;
+import com.codingwithmitch.googlemaps2018.models.UserLocation;
+import com.codingwithmitch.googlemaps2018.util.MyClusterManagerRenderer;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
 
@@ -42,7 +51,14 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
+    private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
     private UserRecyclerAdapter mUserRecyclerAdapter;
+    private GoogleMap mGoogleMap;
+    private LatLngBounds mMapBoundary;
+    private UserLocation mUserPosition;
+    private ClusterManager mClusterManager;
+    private MyClusterManagerRenderer mClusterManagerRenderer;
+    private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
 
 
     public static UserListFragment newInstance() {
@@ -54,7 +70,11 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
+
+            //retreive the list of all the user locations who are in the chatroom
+            mUserLocations = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
         }
+
     }
 
     @Nullable
@@ -67,7 +87,103 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
         initGoogleMap(savedInstanceState);
 
+        for(UserLocation userLocation : mUserLocations){
+            Log.d(TAG,"onCreateView: user location: " +
+                    userLocation.getUser().getUsername());
+            Log.d(TAG,"onCreateView: geopoint: " +
+                    userLocation.getGeoPoint().getLatitude() + ", " +
+                    userLocation.getGeoPoint().getLongitude());
+        }
+
+        setUserPosition();
+
         return view;
+    }
+
+    private void addMapMarkers(){
+
+        if(mGoogleMap != null){
+
+            if(mClusterManager == null){
+                mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
+            }
+            if(mClusterManagerRenderer == null){
+                mClusterManagerRenderer = new MyClusterManagerRenderer(
+                        getActivity(),
+                        mGoogleMap,
+                        mClusterManager
+                );
+                mClusterManager.setRenderer(mClusterManagerRenderer);
+            }
+
+            for(UserLocation userLocation: mUserLocations){
+                Log.d(TAG, "addMapMarkers: locations: " +
+                        userLocation.getGeoPoint().toString());
+                try{
+                    String snippet = "";
+                    if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+                        snippet = "this is you";
+                    }
+                    else{
+                        snippet = "Determine route to " +
+                                userLocation.getUser().getUsername() + "?";
+                    }
+
+                    int avatar = R.drawable.cwm_logo; //set the default avatar
+                    try{
+                        avatar = Integer.parseInt(userLocation.getUser().getAvatar());
+                    }catch (NumberFormatException e){
+                        Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
+                                ", setting default.");
+                    }
+                    ClusterMarker newClusterMarker = new ClusterMarker(
+                                    new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
+                                    userLocation.getUser().getUsername(),
+                                    snippet,
+                                    avatar,
+                                    userLocation.getUser()
+
+                    );
+
+                    //to actually add the marker
+                    mClusterManager.addItem(newClusterMarker);
+                    mClusterMarkers.add(newClusterMarker);
+
+                }catch (NullPointerException e){
+                    Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+                }
+            }
+            //to add everything to the map
+            mClusterManager.cluster();
+            setCameraView();
+
+        }
+    }
+
+    private void setCameraView(){
+
+        //we want to define the top right and bottom left for our boundary
+        //Overall map view window: 0.2 * 0.2 = 0.04
+        double bottomBoundary = mUserPosition.getGeoPoint().getLatitude() - .1;
+        double leftBoundary = mUserPosition.getGeoPoint().getLongitude() - .1;
+
+        double topBoundary = mUserPosition.getGeoPoint().getLatitude() + .1;
+        double rightBoundary = mUserPosition.getGeoPoint().getLongitude() + .1;
+
+        mMapBoundary = new LatLngBounds(
+            new LatLng(bottomBoundary, leftBoundary),
+            new LatLng(topBoundary, rightBoundary)
+        );
+
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary,0));
+    }
+
+    private void setUserPosition(){
+        for(UserLocation userLocation : mUserLocations){
+            if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+                mUserPosition = userLocation;
+            }
+        }
     }
 
     private void initGoogleMap(Bundle savedInstanceState) {
@@ -126,15 +242,18 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onMapReady(GoogleMap map) {
-        map.addMarker(new MarkerOptions().position(new LatLng(44.4474731, 26.0489703)).title("Marker"));
+        map.addMarker(new MarkerOptions().position(new LatLng(44.4474731, 26.0489703)).title("P15 Regie"));
         map.getUiSettings().setZoomControlsEnabled(true);
-        CameraUpdate center=
-                CameraUpdateFactory.newLatLng(new LatLng(44.4474731,
-                        26.0489703));
-        CameraUpdate zoom=CameraUpdateFactory.zoomTo(15);
 
-        map.moveCamera(center);
-        map.animateCamera(zoom);
+
+        // !! In order to center the camera and zoom to a specific position : !!
+//        CameraUpdate center=
+//                CameraUpdateFactory.newLatLng(new LatLng(44.4474731,
+//                        26.0489703));
+//        CameraUpdate zoom=CameraUpdateFactory.zoomTo(15);
+//
+//        map.moveCamera(center);
+//        map.animateCamera(zoom);
 
 
 
@@ -142,16 +261,13 @@ public class UserListFragment extends Fragment implements OnMapReadyCallback {
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         map.setMyLocationEnabled(true);
+        mGoogleMap = map;
+        //setCameraView();
+
+        addMapMarkers();
     }
 
     @Override

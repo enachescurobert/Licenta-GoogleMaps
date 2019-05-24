@@ -87,25 +87,31 @@ public class LoginActivity extends AppCompatActivity implements
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     Toast.makeText(LoginActivity.this, "Authenticated with: " + user.getEmail(), Toast.LENGTH_SHORT).show();
 
-                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-                    FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                            .setTimestampsInSnapshotsEnabled(true)
-                            .build();
-                    db.setFirestoreSettings(settings);
-
-                    DocumentReference userRef = db.collection(getString(R.string.collection_users))
-                            .document(user.getUid());
-
-                    userRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                            if(task.isSuccessful()){
-                                Log.d(TAG, "onComplete: successfully set the user client.");
-                                User user = task.getResult().toObject(User.class);
-                                ((UserClient)(getApplicationContext())).setUser(user);
-                            }
-                        }
-                    });
+//                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+//                    FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+//                            .setTimestampsInSnapshotsEnabled(true)
+//                            .build();
+//                    db.setFirestoreSettings(settings);
+//
+//                    DocumentReference userRef = db.collection(getString(R.string.collection_users))
+//                            .document(user.getUid());
+//
+//                    userRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                        @Override
+//                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                            if(task.isSuccessful()){
+//                                Log.d(TAG, "onComplete: successfully set the user client.");
+//                                User user = task.getResult().toObject(User.class);
+//                                //user client is set here after the user is authenticated
+//                                ((UserClient)(getApplicationContext())).setUser(user);
+//                                //after that, the client can be accessed from any application context, any activity, fragment with
+//                                // User user = ((UserClient)(getApplicationContext())).getUser(user);
+//                                //and that would give us a reference to the user object
+//                                //the client needs to be declared in the manifest.xml
+//                                //android:name=".UserClient"
+//                            }
+//                        }
+//                    });
 
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
