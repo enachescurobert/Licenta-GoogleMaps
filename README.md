@@ -1,4 +1,4 @@
-<a href='https://www.youtube.com/playlist?list=PLgCYzUzKIBE-SZUrVOsbYMzH7tPigT3gi' target='_blank'><img class='header-img' src='https://s3.amazonaws.com/codingwithmitch-static-and-media/media/Google+Maps+and+Directions/1.png' /></a>
+<a href='https://www.youtube.com/playlist?list=PLgCYzUzKIBE-SZUrVOsbYMzH7tPigT3gi' target='_blank'><img class='header-img' src='https://s3.amazonaws.com/enachescurobert-static-and-media/media/Google+Maps+and+Directions/1.png' /></a>
 
 <h3>What I had to learn in order to make this app:</h3>
 <ol>
