@@ -1,6 +1,3 @@
-<a href='https://www.youtube.com/playlist?list=PLgCYzUzKIBE-SZUrVOsbYMzH7tPigT3gi' target='_blank'><img class='header-img' src='https://s3.amazonaws.com/codingwithmitch-static-and-media/media/Google+Maps+and+Directions/1.png' /></a>
-
-
 <h3>What I had to learn in order to create this app:</h3>
 <ol>
   <li>Enabling the Google Maps SDK for Android</li>
