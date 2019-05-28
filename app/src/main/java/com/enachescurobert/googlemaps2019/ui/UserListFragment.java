@@ -102,7 +102,7 @@ public class UserListFragment extends Fragment implements
     //Handler + Runnable -> Responsible for making requests every 3 seconds
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
-    private int mMapLayoutState = 0;
+    private int mMapLayoutState = 1;
     private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
     private Marker mSelectedMarker = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();

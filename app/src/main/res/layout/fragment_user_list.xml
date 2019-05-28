@@ -16,7 +16,7 @@
         <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="50"
+            android:layout_weight="0"
             android:id="@+id/user_list_recycler_view">
 
         </android.support.v7.widget.RecyclerView>
@@ -24,7 +24,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="50"
+            android:layout_weight="100"
             android:id="@+id/map_container">
 
             <com.google.android.gms.maps.MapView
