@@ -25,13 +25,72 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="100"
-            android:id="@+id/map_container">
+            android:id="@+id/map_container"
+            >
 
             <com.google.android.gms.maps.MapView
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/user_list_map" />
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/btn_full_screen_map"
+                android:visibility="visible"
+                >
+                <TextView
+                    android:id="@+id/time_passed_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time passed:"
+                    android:paddingRight="3dp"
+
+                    android:layout_marginTop="15dp"
+                    />
+
+                <TextView
+                    android:id="@+id/time_passed_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:layout_toRightOf="@id/time_passed_text"
+                    android:layout_marginTop="15dp"
+                    />
+                <Button
+                    android:id="@+id/stop_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STOP"
+                    android:layout_toRightOf="@+id/time_passed_value"
+                    android:layout_marginTop="15dp"/>
+
+                <TextView
+                    android:id="@+id/price_per_min"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Price: 0.5$ / 1 min"
+                    android:layout_below="@id/time_passed_text" />
+
+                <TextView
+                    android:id="@+id/total_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total:"
+                    android:layout_below="@id/price_per_min"
+                    android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/total_amount_to_pay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 $"
+                    android:layout_below="@id/price_per_min"
+                    android:layout_toRightOf="@+id/total_price"
+                    android:paddingRight="3dp"/>
+            </RelativeLayout>
+
+
 
             <ImageButton
                 android:layout_width="35dp"

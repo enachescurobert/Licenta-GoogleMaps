@@ -23,7 +23,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -63,6 +65,8 @@ import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.enachescurobert.googlemaps2019.Constants.MAPVIEW_BUNDLE_KEY;
 
@@ -77,6 +81,7 @@ public class UserListFragment extends Fragment implements
     //constants
     private static final String TAG = "UserListFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
+    private static final int START_TIME_IN_MILLIS = 0;
 
     private static final int MAP_LAYOUT_STATE_CONTRACTED = 0;
     private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
@@ -84,6 +89,8 @@ public class UserListFragment extends Fragment implements
     //widgets
     private RecyclerView mUserListRecyclerView;
     private RelativeLayout mMapContainer;
+
+    private Button mStopTime;
 
     //UI component
     private MapView mMapView;
@@ -106,7 +113,13 @@ public class UserListFragment extends Fragment implements
     private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
     private Marker mSelectedMarker = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
+    private int minutes = 0;
+    private int seconds = 0;
+    private Timer myTimer;
 
+    //Paying info
+    private TextView minutesPassed;
+    private TextView totalPrice;
 
     //for Google Directions API
     private GeoApiContext mGeoApiContext = null;
@@ -137,6 +150,11 @@ public class UserListFragment extends Fragment implements
         mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = (MapView) view.findViewById(R.id.user_list_map);
 
+        minutesPassed = (TextView) view.findViewById(R.id.time_passed_value);
+        totalPrice = (TextView) view.findViewById(R.id.total_amount_to_pay);
+
+        mStopTime = (Button) view.findViewById(R.id.stop_time);
+
         view.findViewById(R.id.btn_full_screen_map).setOnClickListener(this);
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
 
@@ -156,6 +174,13 @@ public class UserListFragment extends Fragment implements
         }
 
         setUserPosition();
+
+        mStopTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stopTimer();
+            }
+        });
 
         return view;
     }
@@ -405,7 +430,7 @@ public class UserListFragment extends Fragment implements
                     }
 
                     //int avatar = R.drawable.cwm_logo; //set the default avatar
-                    int avatar = R.drawable.scooter; //set the default avatar
+                    int avatar = R.drawable.user; //set the default avatar
                     try{
                         avatar = Integer.parseInt(userLocation.getUser().getAvatar());
                     }catch (NumberFormatException e){
@@ -675,26 +700,31 @@ public class UserListFragment extends Fragment implements
     @Override
     public void onInfoWindowClick(final Marker marker) {
 
-        if(marker.getTitle().contains("Trip #")){
+        if(marker.getTitle().contains("Route #")){
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage("Open Google Maps?")
+            builder.setMessage("Do you really want to start the engine of the scooter?")
                     .setCancelable(true)
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                            String latitude = String.valueOf(marker.getPosition().latitude);
-                            String longitude = String.valueOf(marker.getPosition().longitude);
-                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
-                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                            mapIntent.setPackage("com.google.android.apps.maps");
 
-                            try{
-                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                                    startActivity(mapIntent);
-                                }
-                            }catch (NullPointerException e){
-                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
-                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+
+                            startTimer();
+
+//                            String latitude = String.valueOf(marker.getPosition().latitude);
+//                            String longitude = String.valueOf(marker.getPosition().longitude);
+//                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+//                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+//                            mapIntent.setPackage("com.google.android.apps.maps");
+//
+//                            try{
+//                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+//                                    startActivity(mapIntent);
+//                                }
+//                            }catch (NullPointerException e){
+//                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
+//                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
+//                            }
 
                         }
                     })
@@ -757,10 +787,16 @@ public class UserListFragment extends Fragment implements
                         polylineData.getLeg().endLocation.lng
                 );
 
+//                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
+//                        .position(endLocation)
+//                        .title("Trip #" + index)
+//                        .snippet("Duration: " + polylineData.getLeg().duration)
+//                );
+
                 Marker marker = mGoogleMap.addMarker(new MarkerOptions()
                         .position(endLocation)
-                        .title("Trip #" + index)
-                        .snippet("Duration: " + polylineData.getLeg().duration)
+                        .title("Route #" + index + ": " + polylineData.getLeg().duration)
+                        .snippet("Start engine of the scooter?")
                 );
 
                 marker.showInfoWindow();
@@ -790,6 +826,45 @@ public class UserListFragment extends Fragment implements
                 break;
             }
         }
+    }
+
+    private void startTimer(){
+
+
+//        minutesPassed;
+//        totalPrice;
+
+        addMapMarkers();
+
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if(seconds==60){
+                            minutes++;
+                            seconds =0;
+                            minutesPassed.setText(minutes + ":" +seconds);
+                            totalPrice.setText(minutes*0.5 + "$");
+                        }else{
+                            seconds++;
+                            minutesPassed.setText(minutes + ":" +seconds);
+                            totalPrice.setText(minutes*0.5 + "$");
+                        }
+
+                    }
+                });
+            }
+        }, 2000, 1000);
+
+    }
+
+
+    private void stopTimer(){
+        myTimer.cancel();
     }
 }
 
