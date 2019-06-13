@@ -83,7 +83,8 @@ public class MainActivity extends AppCompatActivity implements
     //widgets
     private ProgressBar mProgressBar;
     Button mStartOurMap;
-
+    Button mSearchCars;
+    Button mSearchBykes;
 
     //vars
     private ArrayList<Chatroom> mChatrooms = new ArrayList<>();
@@ -133,6 +134,27 @@ public class MainActivity extends AppCompatActivity implements
 
 //                Toast.makeText(MainActivity.this, "Butonul Merge",
 //                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+        mSearchCars=(Button)findViewById(R.id.search_cars);
+        mSearchCars.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                Toast.makeText(MainActivity.this, "Electric cars coming soon",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+        mSearchBykes=(Button)findViewById(R.id.search_bykes);
+        mSearchBykes.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "Bykes coming soon",
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -589,10 +611,11 @@ public class MainActivity extends AppCompatActivity implements
     private void getChatroomUsers(){
 
         CollectionReference usersRef = mDb
-                .collection(getString(R.string.collection_chatrooms))
+                //.collection(getString(R.string.collection_chatrooms))
                 //.document(mChatroom.getChatroom_id())
-                .document("xwT2T8sasZEaY5g0cwf2")
-                .collection(getString(R.string.collection_chatroom_user_list));
+                //.document("xwT2T8sasZEaY5g0cwf2")
+                //.collection(getString(R.string.collection_chatroom_user_list));
+                .collection(getString(R.string.collection_users));
 
         mUserListEventListener = usersRef
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {

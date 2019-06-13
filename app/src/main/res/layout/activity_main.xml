@@ -36,13 +36,38 @@
         android:visibility="gone"/>
 
     <Button
+        android:id="@+id/search_cars"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="1dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginBottom="0dp"
+        android:text="See all cars"
+        app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
+        app:layout_constraintBottom_toTopOf="@+id/search_bykes"
+
+        />
+
+    <Button
+        android:id="@+id/search_bykes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="1dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginBottom="0dp"
+        android:text="See all bykes"
+        app:layout_constraintBottom_toTopOf="@+id/start_our_map"
+        app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
+        />
+
+    <Button
         android:id="@+id/start_our_map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="1dp"
         android:layout_marginLeft="1dp"
         android:layout_marginBottom="0dp"
-        android:text="See everybody"
+        android:text="See all scooters"
         app:layout_constraintBottom_toBottomOf="@+id/chatrooms_recycler_view"
         app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
         />
