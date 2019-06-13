@@ -433,7 +433,7 @@ public class UserListFragment extends Fragment implements
             }
             //to add everything to the map
             mClusterManager.cluster();
-            setCameraView();
+            //setCameraView();
 
         }
     }
@@ -552,13 +552,14 @@ public class UserListFragment extends Fragment implements
 
 
         // !! In order to center the camera and zoom to a specific position : !!
-//        CameraUpdate center=
-//                CameraUpdateFactory.newLatLng(new LatLng(44.4474731,
-//                        26.0489703));
-//        CameraUpdate zoom=CameraUpdateFactory.zoomTo(15);
-//
-//        map.moveCamera(center);
-//        map.animateCamera(zoom);
+        CameraUpdate center=
+                CameraUpdateFactory.newLatLng(new LatLng(44.439663,
+                        26.096306));
+        CameraUpdate zoom=CameraUpdateFactory.zoomTo(11);
+
+
+        map.moveCamera(center);
+        map.animateCamera(zoom);
 
 
 
@@ -581,6 +582,9 @@ public class UserListFragment extends Fragment implements
 
         //we pass 'this' to refer to the interface
         mGoogleMap.setOnInfoWindowClickListener(this);
+
+        mGoogleMap.setMinZoomPreference(10.0f); // Set a preference for minimum zoom (Zoom out).
+        mGoogleMap.setMaxZoomPreference(17.0f); // Set a preference for maximum zoom (Zoom In).
     }
 
     @Override

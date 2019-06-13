@@ -13,7 +13,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.enachescurobert.googlemaps2019.R;
 import com.enachescurobert.googlemaps2019.UserClient;
@@ -49,6 +51,7 @@ public class ChatroomActivity extends AppCompatActivity implements
     //widgets
     private Chatroom mChatroom;
     private EditText mMessage;
+    Button mStartMap;
 
     //vars
     private ListenerRegistration mChatMessageEventListener, mUserListEventListener;
@@ -78,6 +81,25 @@ public class ChatroomActivity extends AppCompatActivity implements
         getIncomingIntent();
         initChatroomRecyclerView();
         getChatroomUsers();
+
+        //inflateUserListFragment();
+
+
+        mStartMap=(Button)findViewById(R.id.start_map);
+        mStartMap.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                inflateUserListFragment();
+
+//                Toast.makeText(ChatroomActivity.this, "Butonul Merge",
+//                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+//        inflateUserListFragment();
+
     }
 
     private void getChatMessages(){
@@ -243,7 +265,7 @@ public class ChatroomActivity extends AppCompatActivity implements
         mMessage.setText("");
     }
 
-    private void inflateUserListFragment(){
+    public void inflateUserListFragment(){
         hideSoftKeyboard();
         
         UserListFragment fragment = UserListFragment.newInstance();

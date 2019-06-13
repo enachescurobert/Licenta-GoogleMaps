@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,6 +24,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -70,8 +73,17 @@ public class MainActivity extends AppCompatActivity implements
 
     private static final String TAG = "MainActivity";
 
+    private ListenerRegistration mUserListEventListener;
+
+    private ArrayList<User> mUserList = new ArrayList<>();
+    private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
+
+    private Chatroom mChatroom;
+
     //widgets
     private ProgressBar mProgressBar;
+    Button mStartOurMap;
+
 
     //vars
     private ArrayList<Chatroom> mChatrooms = new ArrayList<>();
@@ -106,6 +118,23 @@ public class MainActivity extends AppCompatActivity implements
 
         initSupportActionBar();
         initChatroomRecyclerView();
+
+        getChatroomUsers();
+
+        inflateUserListFragment();
+
+        mStartOurMap=(Button)findViewById(R.id.start_our_map);
+        mStartOurMap.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                inflateUserListFragment();
+
+//                Toast.makeText(MainActivity.this, "Butonul Merge",
+//                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     //
@@ -340,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initSupportActionBar(){
-        setTitle("Chatrooms");
+        setTitle("Licenta Enachescu Robert");
     }
 
 
@@ -531,6 +560,92 @@ public class MainActivity extends AppCompatActivity implements
 
     private void hideDialog(){
         mProgressBar.setVisibility(View.GONE);
+    }
+
+    public void inflateUserListFragment(){
+        hideSoftKeyboard();
+
+        UserListFragment fragment = UserListFragment.newInstance();
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList(getString(R.string.intent_user_list), mUserList);
+
+        //in order to pass those locations to a fragment
+        //we need to attach them to a bundle
+        bundle.putParcelableArrayList(getString(R.string.intent_user_locations), mUserLocations);
+
+        fragment.setArguments(bundle);
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+        transaction.replace(R.id.user_maps_container, fragment, getString(R.string.fragment_user_list));
+        transaction.addToBackStack(getString(R.string.fragment_user_list));
+        transaction.commit();
+    }
+
+    private void hideSoftKeyboard(){
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    private void getChatroomUsers(){
+
+        CollectionReference usersRef = mDb
+                .collection(getString(R.string.collection_chatrooms))
+                //.document(mChatroom.getChatroom_id())
+                .document("xwT2T8sasZEaY5g0cwf2")
+                .collection(getString(R.string.collection_chatroom_user_list));
+
+        mUserListEventListener = usersRef
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot queryDocumentSnapshots, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.e(TAG, "onEvent: Listen failed.", e);
+                            return;
+                        }
+
+                        if(queryDocumentSnapshots != null){
+
+                            // Clear the list and add all the users again
+                            mUserList.clear();
+                            mUserList = new ArrayList<>();
+
+                            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                                User user = doc.toObject(User.class);
+                                mUserList.add(user);
+
+                                //
+                                getUserLocation(user);
+
+                            }
+
+                            Log.d(TAG, "onEvent: user list size: " + mUserList.size());
+                        }
+                    }
+                });
+    }
+
+    private void getUserLocation(User user){
+        DocumentReference locationRef = mDb
+                .collection(getString(R.string.collection_user_locations))
+                .document(user.getUser_id());
+
+        locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    //if the task is successful
+                    //we can retrieve a result
+                    if(task.getResult().toObject(UserLocation.class) != null){
+                        //if there is actually a location coordinate of the user in the DB
+                        //<<which it should have (because the user has to accept GPS)>>
+                        //add that location
+                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                        //now we need to pass those locations in the fragment
+                        //that will be done in the inflateUserListFragment() method
+                    }
+                }
+            }
+        });
     }
 
 
