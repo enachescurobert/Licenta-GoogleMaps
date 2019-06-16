@@ -929,12 +929,54 @@ public class UserListFragment extends Fragment implements
             }
         });
 
+        btnContact.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //get input from EditTexts and TextViews and save in variables
+                String recipient = "enachescurobert@gmail.com";
+                String subject = "EcoDrive report";
+                String message = "My issues are:";
+
+                //method call for email intent with these inputs as parameters
+                sendEmail(recipient, subject, message);
+            }
+        });
+
 
         //Dialog background as transparent
         myDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         //show the dialog
         myDialog.show();
     }
+
+    private void sendEmail(String recipient, String subject, String message) {
+        //Action_SEND action to launch an email client installed on our Android device
+        Intent mEmailIntent = new Intent(Intent.ACTION_SEND);
+        //To send an email, we need to specify milto: as URI using setData() method
+        //and data type will be to text/plain using setType() method
+        mEmailIntent.setData(Uri.parse("mailto:"));
+        mEmailIntent.setType("text/plain");
+        //put recipient email in intent
+        /* recipient is put as array because we may want to send email to multiple emails so
+        by using commas(,) separated emails, it will be stored in array
+        */
+        mEmailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{recipient});
+        //we will put the subject of the email
+        mEmailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        //and now, the message
+        mEmailIntent.putExtra(Intent.EXTRA_TEXT, message);
+
+        try {
+            //no error, so start intent
+            startActivity(Intent.createChooser(mEmailIntent, "Send email"));
+        }
+        catch (Exception e){
+            //if anything goes wrong e.g no internet or email client
+            //get and show exception
+            Toast.makeText(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
 
 
