@@ -3,11 +3,14 @@ package com.enachescurobert.googlemaps2019.ui;
 import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Camera;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -63,6 +66,8 @@ import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -94,6 +99,8 @@ public class UserListFragment extends Fragment implements
 
     //UI component
     private MapView mMapView;
+
+    Dialog myDialog;
 
 
     //vars
@@ -160,6 +167,9 @@ public class UserListFragment extends Fragment implements
 
         mMapContainer = view.findViewById(R.id.map_container);
 
+        myDialog = new Dialog(getActivity());
+
+
 
         initUserListRecyclerView();
 
@@ -179,6 +189,7 @@ public class UserListFragment extends Fragment implements
             @Override
             public void onClick(View view) {
                 stopTimer();
+                showPopup();
             }
         });
 
@@ -702,7 +713,7 @@ public class UserListFragment extends Fragment implements
 
         if(marker.getTitle().contains("Route #")){
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage("Do you really want to start the engine of the scooter?")
+            builder.setMessage("Do you really want to start the engine of the scooter? \n\nWe charge: 0.5$/minute + 1$ when engine starts")
                     .setCancelable(true)
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
@@ -844,15 +855,15 @@ public class UserListFragment extends Fragment implements
                     @Override
                     public void run() {
 
-                        if(seconds==60){
+                        if(seconds==59){
                             minutes++;
                             seconds =0;
                             minutesPassed.setText(minutes + ":" +seconds);
-                            totalPrice.setText(minutes*0.5 + "$");
+                            totalPrice.setText(1 + minutes*0.5 + "$");
                         }else{
                             seconds++;
                             minutesPassed.setText(minutes + ":" +seconds);
-                            totalPrice.setText(minutes*0.5 + "$");
+                            totalPrice.setText(1 + minutes*0.5 + "$");
                         }
 
                     }
@@ -864,7 +875,57 @@ public class UserListFragment extends Fragment implements
 
 
     private void stopTimer(){
-        myTimer.cancel();
+        if(myTimer != null) {
+            myTimer.cancel();
+        }
+    }
+
+    public void showPopup() {
+
+        TextView minutesPassedPopup;
+        TextView totalToPay;
+        TextView txtClose;
+        Button btnContact;
+
+        myDialog.setContentView(R.layout.custom_popup);
+
+        minutesPassedPopup = (TextView) myDialog.findViewById(R.id.minutes_passed);
+
+        if(minutes == 1){
+            minutesPassedPopup.setText(String.valueOf("One minute"));
+        }else {
+            minutesPassedPopup.setText(String.valueOf(minutes + " minutes"));
+        }
+
+        totalToPay = (TextView) myDialog.findViewById(R.id.total_to_pay);
+        totalToPay.setText(String.valueOf(1 + minutes * 0.5 + "$"));
+
+
+        //Close the dialog if "x" is pressed
+        txtClose =(TextView) myDialog.findViewById(R.id.txt_close);
+        txtClose.setText("x");
+        btnContact = (Button) myDialog.findViewById(R.id.btn_contact);
+        txtClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+
+                Toast.makeText(getContext(),"Payment has been made.", Toast.LENGTH_LONG).show();
+                minutes = 0;
+                seconds = 0;
+                minutesPassed.setText(minutes + ":" +seconds);
+                totalPrice.setText("0$");
+
+                myDialog.dismiss();
+            }
+        });
+
+
+        //Dialog background as transparent
+        myDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        //show the dialog
+        myDialog.show();
     }
 }
 
