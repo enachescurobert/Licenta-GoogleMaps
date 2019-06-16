@@ -94,6 +94,7 @@ public class UserListFragment extends Fragment implements
     //widgets
     private RecyclerView mUserListRecyclerView;
     private RelativeLayout mMapContainer;
+    private RelativeLayout mTimeAndTotal;
 
     private Button mStopTime;
 
@@ -167,7 +168,10 @@ public class UserListFragment extends Fragment implements
 
         mMapContainer = view.findViewById(R.id.map_container);
 
+
+
         myDialog = new Dialog(getActivity());
+
 
 
 
@@ -189,6 +193,8 @@ public class UserListFragment extends Fragment implements
             @Override
             public void onClick(View view) {
                 stopTimer();
+                mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                mTimeAndTotal.setVisibility(View.GONE);
                 showPopup();
             }
         });
@@ -720,6 +726,8 @@ public class UserListFragment extends Fragment implements
 
                             Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
 
+                            mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                            mTimeAndTotal.setVisibility(View.VISIBLE);
                             startTimer();
 
 //                            String latitude = String.valueOf(marker.getPosition().latitude);

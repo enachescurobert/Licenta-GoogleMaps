@@ -35,10 +35,11 @@
                 android:id="@+id/user_list_map" />
 
             <RelativeLayout
+                android:id="@+id/time_and_total"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/btn_full_screen_map"
-                android:visibility="visible"
+                android:visibility="gone"
                 >
                 <TextView
                     android:id="@+id/time_passed_text"
