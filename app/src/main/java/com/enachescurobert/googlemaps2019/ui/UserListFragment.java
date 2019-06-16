@@ -171,6 +171,7 @@ public class UserListFragment extends Fragment implements
 
 
         myDialog = new Dialog(getActivity());
+        myDialog.setCanceledOnTouchOutside(false);
 
 
 
