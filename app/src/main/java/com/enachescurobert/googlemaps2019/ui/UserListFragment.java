@@ -448,7 +448,7 @@ public class UserListFragment extends Fragment implements
                     }
 
                     //int avatar = R.drawable.cwm_logo; //set the default avatar
-                    int avatar = R.drawable.user; //set the default avatar
+                    int avatar = R.drawable.scooter; //set the default avatar
                     try{
                         avatar = Integer.parseInt(userLocation.getUser().getAvatar());
                     }catch (NumberFormatException e){
@@ -464,12 +464,15 @@ public class UserListFragment extends Fragment implements
 
                     );
 
-                    //to actually add the marker
-                    mClusterManager.addItem(newClusterMarker);
-                    //the cluster manager is the one who is actually displayed on the map
-                    mClusterMarkers.add(newClusterMarker);
-                    //the cluster marker is just a tool for us to keep the track of the markers on the map
+                    String scuterSauUtilizator = userLocation.getUser().getUsername();
 
+                    if(scuterSauUtilizator.toString().contains("scuter")) {
+                        //to actually add the marker
+                        mClusterManager.addItem(newClusterMarker);
+                        //the cluster manager is the one who is actually displayed on the map
+                        mClusterMarkers.add(newClusterMarker);
+                        //the cluster marker is just a tool for us to keep the track of the markers on the map
+                    }
                 }catch (NullPointerException e){
                     Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
                 }
