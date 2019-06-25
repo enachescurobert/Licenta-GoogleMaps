@@ -89,6 +89,21 @@
                     android:layout_below="@id/price_per_min"
                     android:layout_toRightOf="@+id/total_price"
                     android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/parking"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Parking Code:"
+                    android:layout_below="@id/total_amount_to_pay"
+                    android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/parking_code"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="xxxx"
+                    android:layout_below="@id/total_amount_to_pay"
+                    android:layout_toRightOf="@id/parking"
+                    android:paddingRight="3dp"/>
             </RelativeLayout>
 
 

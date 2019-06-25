@@ -70,6 +70,7 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -125,12 +126,16 @@ public class UserListFragment extends Fragment implements
     private int seconds = 0;
     private Timer myTimer;
 
+
     //Paying info
     private TextView minutesPassed;
     private TextView totalPrice;
+    private TextView mParkingCode;
 
     //for Google Directions API
     private GeoApiContext mGeoApiContext = null;
+
+    private String[] array;
 
 
 
@@ -163,6 +168,10 @@ public class UserListFragment extends Fragment implements
 
         mStopTime = (Button) view.findViewById(R.id.stop_time);
 
+
+        array = getResources().getStringArray(R.array.array_codes_parking);
+
+
         view.findViewById(R.id.btn_full_screen_map).setOnClickListener(this);
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
 
@@ -187,6 +196,8 @@ public class UserListFragment extends Fragment implements
                     userLocation.getGeoPoint().getLatitude() + ", " +
                     userLocation.getGeoPoint().getLongitude());
         }
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         setUserPosition();
 
@@ -730,6 +741,8 @@ public class UserListFragment extends Fragment implements
 
                             Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
 
+                            startEngine();
+
                             mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                             mTimeAndTotal.setVisibility(View.VISIBLE);
                             startTimer();
@@ -981,7 +994,58 @@ public class UserListFragment extends Fragment implements
         }
     }
 
+    private void startEngine() {
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        DocumentReference docRef = db.collection("User Locations").document("OHyToOAtSAPrCRGB9G3rfPYWAOU2");
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
+                        Log.d(TAG, "document user: " + document.get("user"));
+                    } else {
+                        Log.d(TAG, "No such document");
+                    }
+                } else {
+                    Log.d(TAG, "get failed with ", task.getException());
+                }
+            }
+        });
+
+
+
+        for (UserLocation userLocation : mUserLocations) {
+//            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
+            if (userLocation.getUser().getUser_id().toString().contains("OHyToOAtSAPrCRGB9G3rfPYWAOU2")){
+                Log.d(TAG, "startEngine: engine started!");
+            } else {
+                Log.d(TAG, "startEngine: not a real scooter.");
+            }
+
+        }
+
+        generateParkingCode();
+
+    }
+
+    private void generateParkingCode(){
+        String randomStr = array[new Random().nextInt(array.length)];
+
+        TextView mParkingCode = (TextView) getActivity().findViewById(R.id.parking_code);
+
+        try {
+            mParkingCode.setText(randomStr);
+        }catch (Exception e){
+            Log.e(TAG, "generateParkingCode: " + e.getMessage());
+        }
+        Log.d(TAG, "generateParkingCode: the generated code is " + randomStr);
+    }
 }
+
 
 
 
