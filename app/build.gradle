@@ -58,5 +58,9 @@ dependencies {
 
     //Google Maps utils for clustering
     implementation 'com.google.maps.android:android-maps-utils:0.5'
+
+    //Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
 }
 apply plugin: 'com.google.gms.google-services'

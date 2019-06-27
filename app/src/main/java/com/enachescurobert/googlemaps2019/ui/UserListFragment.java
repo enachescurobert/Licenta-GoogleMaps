@@ -125,6 +125,7 @@ public class UserListFragment extends Fragment implements
     private int minutes = 0;
     private int seconds = 0;
     private Timer myTimer;
+    private int engineOn = 0;
 
 
     //Paying info
@@ -483,7 +484,18 @@ public class UserListFragment extends Fragment implements
                         //the cluster manager is the one who is actually displayed on the map
                         mClusterMarkers.add(newClusterMarker);
                         //the cluster marker is just a tool for us to keep the track of the markers on the map
+
+                        Log.d(TAG, "addMapMarkers: Added: " + userLocation.getUser().getUsername());
+
                     }
+
+                    if(scuterSauUtilizator.toString().contains("scuter6")) {
+
+
+                        engineOn = 0;
+
+                    }
+
                 }catch (NullPointerException e){
                     Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
                 }
@@ -640,6 +652,14 @@ public class UserListFragment extends Fragment implements
         //we pass 'this' to refer to the interface
         mGoogleMap.setOnInfoWindowClickListener(this);
 
+        mGoogleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Log.d(TAG, "onMarkerClick: marker name: " + marker.getTitle());
+                return false;
+            }
+        });
+
         mGoogleMap.setMinZoomPreference(10.0f); // Set a preference for minimum zoom (Zoom out).
         mGoogleMap.setMaxZoomPreference(17.0f); // Set a preference for maximum zoom (Zoom In).
     }
@@ -732,6 +752,8 @@ public class UserListFragment extends Fragment implements
     @Override
     public void onInfoWindowClick(final Marker marker) {
 
+
+
         if(marker.getTitle().contains("Route #")){
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setMessage("Do you really want to start the engine of the scooter? \n\nWe charge: 0.5$/minute + 1$ when engine starts")
@@ -739,9 +761,20 @@ public class UserListFragment extends Fragment implements
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
 
-                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
 
-                            startEngine();
+//                            startEngine();
+
+                            Log.d(TAG, "onClick: test1234 " + marker.getSnippet() );
+
+                            if (marker.getSnippet().contains("scuter6")){
+                                Log.d(TAG, "Scooter 6: STARTED");
+                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                            }else{
+                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+
+                            }
+
+
 
                             mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                             mTimeAndTotal.setVisibility(View.VISIBLE);
@@ -790,6 +823,7 @@ public class UserListFragment extends Fragment implements
 
                                 mSelectedMarker = marker;
                                 calculateDirections(marker);
+
                                 //dialog.dismiss();
                             }
                         })
@@ -832,7 +866,7 @@ public class UserListFragment extends Fragment implements
                 Marker marker = mGoogleMap.addMarker(new MarkerOptions()
                         .position(endLocation)
                         .title("Route #" + index + ": " + polylineData.getLeg().duration)
-                        .snippet("Start engine of the scooter?")
+                        .snippet("Start engine of " + mSelectedMarker.getTitle())
                 );
 
                 marker.showInfoWindow();
@@ -996,6 +1030,7 @@ public class UserListFragment extends Fragment implements
 
     private void startEngine() {
 
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         DocumentReference docRef = db.collection("User Locations").document("OHyToOAtSAPrCRGB9G3rfPYWAOU2");
@@ -1018,15 +1053,15 @@ public class UserListFragment extends Fragment implements
 
 
 
-        for (UserLocation userLocation : mUserLocations) {
-//            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
-            if (userLocation.getUser().getUser_id().toString().contains("OHyToOAtSAPrCRGB9G3rfPYWAOU2")){
-                Log.d(TAG, "startEngine: engine started!");
-            } else {
-                Log.d(TAG, "startEngine: not a real scooter.");
-            }
-
-        }
+//        for (UserLocation userLocation : mUserLocations) {
+////            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
+//            if (userLocation.getUser().getUser_id().toString().contains("OHyToOAtSAPrCRGB9G3rfPYWAOU2")){
+//                Log.d(TAG, "startEngine: engine started!");
+//            } else {
+//                Log.d(TAG, "startEngine: not a real scooter.");
+//            }
+//
+//        }
 
         generateParkingCode();
 
@@ -1043,6 +1078,10 @@ public class UserListFragment extends Fragment implements
             Log.e(TAG, "generateParkingCode: " + e.getMessage());
         }
         Log.d(TAG, "generateParkingCode: the generated code is " + randomStr);
+    }
+
+    private void turnOnTheEngine(){
+        engineOn = 1;
     }
 }
 
