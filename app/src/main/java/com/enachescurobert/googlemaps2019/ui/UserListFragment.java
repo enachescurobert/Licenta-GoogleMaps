@@ -39,6 +39,7 @@ import com.enachescurobert.googlemaps2019.models.PolylineData;
 import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
 import com.enachescurobert.googlemaps2019.util.MyClusterManagerRenderer;
+import com.enachescurobert.googlemaps2019.util.ThingSpeakApi;
 import com.enachescurobert.googlemaps2019.util.ViewWeightAnimationWrapper;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -73,6 +74,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.enachescurobert.googlemaps2019.Constants.MAPVIEW_BUNDLE_KEY;
 
@@ -125,7 +132,8 @@ public class UserListFragment extends Fragment implements
     private int minutes = 0;
     private int seconds = 0;
     private Timer myTimer;
-    private int engineOn = 0;
+
+    private ThingSpeakApi thingSpeakApi;
 
 
     //Paying info
@@ -211,6 +219,13 @@ public class UserListFragment extends Fragment implements
                 showPopup();
             }
         });
+
+        Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl("https://api.thingspeak.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build();
+
+        thingSpeakApi = retrofit.create(ThingSpeakApi.class);
 
         return view;
     }
@@ -489,12 +504,12 @@ public class UserListFragment extends Fragment implements
 
                     }
 
-                    if(scuterSauUtilizator.toString().contains("scuter6")) {
-
-
-                        engineOn = 0;
-
-                    }
+//                    if(scuterSauUtilizator.toString().contains("scuter6")) {
+//
+//
+//
+//
+//                    }
 
                 }catch (NullPointerException e){
                     Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
@@ -769,6 +784,7 @@ public class UserListFragment extends Fragment implements
                             if (marker.getSnippet().contains("scuter6")){
                                 Log.d(TAG, "Scooter 6: STARTED");
                                 Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                                turnOnEngine();
                             }else{
                                 Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
 
@@ -998,6 +1014,8 @@ public class UserListFragment extends Fragment implements
         myDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         //show the dialog
         myDialog.show();
+
+        turnOffEngine();
     }
 
     private void sendEmail(String recipient, String subject, String message) {
@@ -1080,9 +1098,43 @@ public class UserListFragment extends Fragment implements
         Log.d(TAG, "generateParkingCode: the generated code is " + randomStr);
     }
 
-    private void turnOnTheEngine(){
-        engineOn = 1;
+
+    private void turnOnEngine() {
+
+        Call<Void> call = thingSpeakApi.turnOnEngine();
+
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                Log.d(TAG, "onResponse: Status code: " + response.code());
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+            }
+        });
     }
+
+    private void turnOffEngine() {
+
+        Call<Void> call = thingSpeakApi.turnOffEngine();
+
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                Log.d(TAG, "onResponse: Status code: " + response.code());
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+            }
+        });
+    }
+
 }
 
 
