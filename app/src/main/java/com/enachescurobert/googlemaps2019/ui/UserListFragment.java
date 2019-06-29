@@ -790,7 +790,7 @@ public class UserListFragment extends Fragment implements
 
                             }
 
-
+                            generateParkingCode();
 
                             mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                             mTimeAndTotal.setVisibility(View.VISIBLE);
@@ -1046,44 +1046,6 @@ public class UserListFragment extends Fragment implements
         }
     }
 
-    private void startEngine() {
-
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        DocumentReference docRef = db.collection("User Locations").document("OHyToOAtSAPrCRGB9G3rfPYWAOU2");
-        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
-                        Log.d(TAG, "document user: " + document.get("user"));
-                    } else {
-                        Log.d(TAG, "No such document");
-                    }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
-
-
-
-//        for (UserLocation userLocation : mUserLocations) {
-////            if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
-//            if (userLocation.getUser().getUser_id().toString().contains("OHyToOAtSAPrCRGB9G3rfPYWAOU2")){
-//                Log.d(TAG, "startEngine: engine started!");
-//            } else {
-//                Log.d(TAG, "startEngine: not a real scooter.");
-//            }
-//
-//        }
-
-        generateParkingCode();
-
-    }
 
     private void generateParkingCode(){
         String randomStr = array[new Random().nextInt(array.length)];
