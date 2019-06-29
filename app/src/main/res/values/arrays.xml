@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="array_codes_parking">
-        <item>12345</item>
-        <item>67890</item>
-        <item>13579</item>
-        <item>24680</item>
-        <item>14253</item>
+        <item>123456</item>
+        <item>678900</item>
+        <item>135790</item>
+        <item>246800</item>
+        <item>142530</item>
     </string-array>
 </resources>
