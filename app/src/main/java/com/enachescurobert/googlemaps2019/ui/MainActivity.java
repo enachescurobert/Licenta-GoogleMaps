@@ -16,7 +16,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,7 +27,6 @@ import android.widget.Toast;
 
 import com.enachescurobert.googlemaps2019.R;
 import com.enachescurobert.googlemaps2019.UserClient;
-import com.enachescurobert.googlemaps2019.adapters.ChatroomRecyclerAdapter;
 import com.enachescurobert.googlemaps2019.models.Chatroom;
 import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
@@ -83,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
     //vars
     private ArrayList<Chatroom> mChatrooms = new ArrayList<>();
     private Set<String> mChatroomIds = new HashSet<>();
-    private ChatroomRecyclerAdapter mChatroomRecyclerAdapter;
-    private RecyclerView mChatroomRecyclerView;
     private ListenerRegistration mChatroomEventListener;
     private FirebaseFirestore mDb;
 
@@ -103,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mProgressBar = findViewById(R.id.progressBar);
-        mChatroomRecyclerView = findViewById(R.id.chatrooms_recycler_view);
+//        mChatroomRecyclerView = findViewById(R.id.chatrooms_recycler_view);
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
