@@ -32,7 +32,6 @@ import android.widget.Toast;
 
 
 import com.enachescurobert.googlemaps2019.R;
-import com.enachescurobert.googlemaps2019.adapters.UserRecyclerAdapter;
 import com.enachescurobert.googlemaps2019.models.ClusterMarker;
 import com.enachescurobert.googlemaps2019.models.PolylineData;
 import com.enachescurobert.googlemaps2019.models.User;
@@ -84,9 +83,7 @@ public class MapFragment extends Fragment implements
         OnMapReadyCallback,
         View.OnClickListener,
         GoogleMap.OnInfoWindowClickListener,
-        GoogleMap.OnPolylineClickListener,
-        UserRecyclerAdapter.UserListRecyclerClickListener
-{
+        GoogleMap.OnPolylineClickListener {
 
     //constants
     private static final String TAG = "MapFragment";
@@ -112,7 +109,6 @@ public class MapFragment extends Fragment implements
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
     private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
-    private UserRecyclerAdapter mUserRecyclerAdapter;
     private GoogleMap mGoogleMap;
     private LatLngBounds mMapBoundary;
     private UserLocation mUserPosition;
@@ -177,8 +173,6 @@ public class MapFragment extends Fragment implements
 
         array = getResources().getStringArray(R.array.array_codes_parking);
 
-
-        view.findViewById(R.id.btn_full_screen_map).setOnClickListener(this);
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
 
         mMapContainer = view.findViewById(R.id.map_container);
@@ -187,11 +181,6 @@ public class MapFragment extends Fragment implements
 
         myDialog = new Dialog(getActivity());
         myDialog.setCanceledOnTouchOutside(false);
-
-
-
-
-        initUserListRecyclerView();
 
         initGoogleMap(savedInstanceState);
 
@@ -573,14 +562,6 @@ public class MapFragment extends Fragment implements
 
     }
 
-
-    private void initUserListRecyclerView() {
-        //this will refer to the interface UserRecyclerAdapter
-        mUserRecyclerAdapter = new UserRecyclerAdapter(mUserList, this);
-        mUserListRecyclerView.setAdapter(mUserRecyclerAdapter);
-        mUserListRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-    }
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -705,25 +686,8 @@ public class MapFragment extends Fragment implements
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.btn_full_screen_map:{
-
-                if(mMapLayoutState == MAP_LAYOUT_STATE_CONTRACTED){
-                    mMapLayoutState = MAP_LAYOUT_STATE_EXPANDED;
-                    expandMapAnimation();
-                }
-                else if(mMapLayoutState == MAP_LAYOUT_STATE_EXPANDED){
-                    mMapLayoutState = MAP_LAYOUT_STATE_CONTRACTED;
-                    contractMapAnimation();
-                }
-                break;
-            }
-
-            case R.id.btn_reset_map:{
-                addMapMarkers();
-                break;
-            }
-
+        if (v.getId() == R.id.btn_reset_map) {
+            addMapMarkers();
         }
     }
 
@@ -896,23 +860,6 @@ public class MapFragment extends Fragment implements
             else{
                 polylineData.getPolyline().setColor(ContextCompat.getColor(getActivity(), R.color.darkGrey));
                 polylineData.getPolyline().setZIndex(0);
-            }
-        }
-    }
-
-    @Override
-    public void onUserClicked(int position) {
-        Log.d(TAG,"onUserClicked: selected a user: " + mUserList.get(position).getUser_id());
-
-        String selectedUserId = mUserList.get(position).getUser_id();
-        for(ClusterMarker clusterMarker: mClusterMarkers){
-            if(selectedUserId.equals(clusterMarker.getUser().getUser_id())){
-                mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(
-                        new LatLng(clusterMarker.getPosition().latitude, clusterMarker.getPosition().longitude)),
-                        600,
-                        null
-                );
-                break;
             }
         }
     }
