@@ -67,9 +67,7 @@ import static com.enachescurobert.googlemaps2019.Constants.PERMISSIONS_REQUEST_A
 import static com.enachescurobert.googlemaps2019.Constants.PERMISSIONS_REQUEST_ENABLE_GPS;
 
 
-public class MainActivity extends AppCompatActivity implements
-        View.OnClickListener,
-        ChatroomRecyclerAdapter.ChatroomRecyclerClickListener {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
@@ -111,14 +109,11 @@ public class MainActivity extends AppCompatActivity implements
         mProgressBar = findViewById(R.id.progressBar);
         mChatroomRecyclerView = findViewById(R.id.chatrooms_recycler_view);
 
-        findViewById(R.id.fab_create_chatroom).setOnClickListener(this);
-
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         mDb = FirebaseFirestore.getInstance();
 
         initSupportActionBar();
-        initChatroomRecyclerView();
 
         getChatroomUsers();
 
@@ -394,23 +389,6 @@ public class MainActivity extends AppCompatActivity implements
         setTitle("Licenta Enachescu Robert");
     }
 
-
-    @Override
-    public void onClick(View view) {
-        switch (view.getId()){
-
-            case R.id.fab_create_chatroom:{
-                newChatroomDialog();
-            }
-        }
-    }
-
-    private void initChatroomRecyclerView(){
-        mChatroomRecyclerAdapter = new ChatroomRecyclerAdapter(mChatrooms, this);
-        mChatroomRecyclerView.setAdapter(mChatroomRecyclerAdapter);
-        mChatroomRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-    }
-
     private void getChatrooms(){
 
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
@@ -441,79 +419,12 @@ public class MainActivity extends AppCompatActivity implements
                         }
                     }
                     Log.d(TAG, "onEvent: number of chatrooms: " + mChatrooms.size());
-                    mChatroomRecyclerAdapter.notifyDataSetChanged();
                 }
 
             }
         });
     }
 
-    private void buildNewChatroom(String chatroomName){
-
-        final Chatroom chatroom = new Chatroom();
-        chatroom.setTitle(chatroomName);
-
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
-
-        DocumentReference newChatroomRef = mDb
-                .collection(getString(R.string.collection_chatrooms))
-                .document();
-
-        chatroom.setChatroom_id(newChatroomRef.getId());
-
-        newChatroomRef.set(chatroom).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                hideDialog();
-
-                if(task.isSuccessful()){
-                    navChatroomActivity(chatroom);
-                }else{
-                    View parentLayout = findViewById(android.R.id.content);
-                    Snackbar.make(parentLayout, "Something went wrong.", Snackbar.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
-    private void navChatroomActivity(Chatroom chatroom){
-        Intent intent = new Intent(MainActivity.this, ChatroomActivity.class);
-        intent.putExtra(getString(R.string.intent_chatroom), chatroom);
-        startActivity(intent);
-    }
-
-    private void newChatroomDialog(){
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Enter a chatroom name");
-
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
-
-        builder.setPositiveButton("CREATE", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if(!input.getText().toString().equals("")){
-                    buildNewChatroom(input.getText().toString());
-                }
-                else {
-                    Toast.makeText(MainActivity.this, "Enter a chatroom name", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
-    }
 
     @Override
     protected void onDestroy() {
@@ -536,11 +447,6 @@ public class MainActivity extends AppCompatActivity implements
                 getLocationPermission();
             }
         }
-    }
-
-    @Override
-    public void onChatroomSelected(int position) {
-        navChatroomActivity(mChatrooms.get(position));
     }
 
     private void signOut(){
