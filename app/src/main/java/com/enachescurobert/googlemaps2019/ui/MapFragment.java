@@ -94,7 +94,6 @@ public class MapFragment extends Fragment implements
     private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
 
     //widgets
-    private RecyclerView mUserListRecyclerView;
     private RelativeLayout mMapContainer;
     private RelativeLayout mTimeAndTotal;
 
@@ -162,7 +161,6 @@ public class MapFragment extends Fragment implements
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
-        mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = (MapView) view.findViewById(R.id.user_list_map);
 
         minutesPassed = (TextView) view.findViewById(R.id.time_passed_value);
@@ -689,44 +687,6 @@ public class MapFragment extends Fragment implements
         if (v.getId() == R.id.btn_reset_map) {
             addMapMarkers();
         }
-    }
-
-    private void expandMapAnimation(){
-        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
-        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
-                "weight",
-                50,
-                100);
-        mapAnimation.setDuration(800);
-
-        ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
-        ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
-                "weight",
-                50,
-                0);
-        recyclerAnimation.setDuration(800);
-
-        recyclerAnimation.start();
-        mapAnimation.start();
-    }
-
-    private void contractMapAnimation(){
-        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
-        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
-                "weight",
-                100,
-                50);
-        mapAnimation.setDuration(800);
-
-        ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
-        ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
-                "weight",
-                0,
-                50);
-        recyclerAnimation.setDuration(800);
-
-        recyclerAnimation.start();
-        mapAnimation.start();
     }
 
     @Override
