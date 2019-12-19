@@ -10,13 +10,15 @@ public class User implements Parcelable{
     private String username;
     private String avatar;
     private boolean scooter;
+    private boolean engineStarted;
 
-    public User(String email, String user_id, String username, String avatar, boolean scooter) {
+    public User(String email, String user_id, String username, String avatar, boolean scooter, boolean engineStarted) {
         this.email = email;
         this.user_id = user_id;
         this.username = username;
         this.avatar = avatar;
         this.scooter = scooter;
+        this.engineStarted = engineStarted;
     }
 
     public User() {
@@ -29,6 +31,7 @@ public class User implements Parcelable{
         username = in.readString();
         avatar = in.readString();
         scooter = in.readByte() != 0; // scooter -> true if byte != 0
+        engineStarted = in.readByte() != 0; // scooter -> true if byte != 0
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
@@ -87,6 +90,14 @@ public class User implements Parcelable{
         this.scooter = scooter;
     }
 
+    public boolean isEngineStarted() {
+        return engineStarted;
+    }
+
+    public void setEngineStarted(boolean engineStarted) {
+        this.engineStarted = engineStarted;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -95,6 +106,7 @@ public class User implements Parcelable{
                 ", username='" + username + '\'' +
                 ", avatar='" + avatar + '\'' +
                 ", is scooter=" + scooter +
+                ", engine started=" + engineStarted +
                 '}';
     }
 
@@ -110,6 +122,7 @@ public class User implements Parcelable{
         dest.writeString(username);
         dest.writeString(avatar);
         dest.writeByte((byte) (scooter ? 1 : 0)); // if scooter == true, byte  -> 1
+        dest.writeByte((byte) (engineStarted ? 1 : 0)); // if scooter == true, byte  -> 1
     }
 }
 

@@ -841,6 +841,8 @@ public class UserListFragment extends Fragment implements
                                 //before the marker is set again
                                 resetSelectedMarker();
 
+                                setUserPosition();
+
                                 mSelectedMarker = marker;
                                 calculateDirections(marker);
 

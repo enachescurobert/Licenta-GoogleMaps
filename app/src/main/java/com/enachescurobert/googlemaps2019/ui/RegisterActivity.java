@@ -82,6 +82,7 @@ public class RegisterActivity extends AppCompatActivity implements
                             user.setUsername(username);
                             user.setUser_id(FirebaseAuth.getInstance().getUid());
                             user.setScooter(username.contains("scuter"));
+                            user.setEngineStarted(false);
 
                             FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                                     .setTimestampsInSnapshotsEnabled(true)
