@@ -27,7 +27,6 @@ import android.widget.Toast;
 
 import com.enachescurobert.googlemaps2019.R;
 import com.enachescurobert.googlemaps2019.UserClient;
-import com.enachescurobert.googlemaps2019.models.Chatroom;
 import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
 import com.enachescurobert.googlemaps2019.services.LocationService;
@@ -70,8 +69,6 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<User> mUserList = new ArrayList<>();
     private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
 
-    private Chatroom mChatroom;
-
     //widgets
     private ProgressBar mProgressBar;
     Button mStartOurMap;
@@ -79,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     Button mSearchBykes;
 
     //vars
-    private ArrayList<Chatroom> mChatrooms = new ArrayList<>();
     private Set<String> mChatroomIds = new HashSet<>();
     private ListenerRegistration mChatroomEventListener;
     private FirebaseFirestore mDb;
@@ -311,7 +307,6 @@ public class MainActivity extends AppCompatActivity {
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
-            getChatrooms();
             getUserDetails();
         } else {
             ActivityCompat.requestPermissions(this,
@@ -366,7 +361,6 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_ENABLE_GPS: {
                 if(mLocationPermissionGranted){
-                    getChatrooms();
                     getUserDetails();
                 }
                 else{
@@ -381,43 +375,6 @@ public class MainActivity extends AppCompatActivity {
         setTitle("Licenta Enachescu Robert");
     }
 
-    private void getChatrooms(){
-
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        mDb.setFirestoreSettings(settings);
-
-        CollectionReference chatroomsCollection = mDb
-                .collection(getString(R.string.collection_chatrooms));
-
-        mChatroomEventListener = chatroomsCollection.addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                Log.d(TAG, "onEvent: called.");
-
-                if (e != null) {
-                    Log.e(TAG, "onEvent: Listen failed.", e);
-                    return;
-                }
-
-                if(queryDocumentSnapshots != null){
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-
-                        Chatroom chatroom = doc.toObject(Chatroom.class);
-                        if(!mChatroomIds.contains(chatroom.getChatroom_id())){
-                            mChatroomIds.add(chatroom.getChatroom_id());
-                            mChatrooms.add(chatroom);
-                        }
-                    }
-                    Log.d(TAG, "onEvent: number of chatrooms: " + mChatrooms.size());
-                }
-
-            }
-        });
-    }
-
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -429,10 +386,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        getChatrooms();
         if(checkMapServices()){
             if(mLocationPermissionGranted){
-                getChatrooms();
                 getUserDetails();
             }
             else{

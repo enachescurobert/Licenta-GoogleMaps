@@ -1101,23 +1101,3 @@ public class MapFragment extends Fragment implements
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
