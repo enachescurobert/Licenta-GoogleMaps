@@ -1,4 +1,4 @@
-<h3>What I had to learn in order to make this app:</h3>
+<h1>Proof of concept:</h1>
 <ol>
   <li>Enabling the Google Maps SDK for Android</li>
   <li>Enabling the Google Directions API for Android</li>
