@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/White">
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="100"
+        android:background="@color/White">
+
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0"
+            android:id="@+id/user_list_recycler_view">
+
+        </android.support.v7.widget.RecyclerView>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="100"
+            android:id="@+id/map_container"
+            >
+
+            <com.google.android.gms.maps.MapView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/user_list_map" />
+
+            <RelativeLayout
+                android:id="@+id/time_and_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/btn_full_screen_map"
+                android:visibility="gone"
+                >
+                <TextView
+                    android:id="@+id/time_passed_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time passed:"
+                    android:paddingRight="3dp"
+
+                    android:layout_marginTop="15dp"
+                    />
+
+                <TextView
+                    android:id="@+id/time_passed_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:layout_toRightOf="@id/time_passed_text"
+                    android:layout_marginTop="15dp"
+                    />
+                <Button
+                    android:id="@+id/stop_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STOP"
+                    android:layout_toRightOf="@+id/time_passed_value"
+                    android:layout_marginTop="15dp"/>
+
+                <TextView
+                    android:id="@+id/price_per_min"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Price: 0.5$ / 1 min"
+                    android:layout_below="@id/time_passed_text" />
+
+                <TextView
+                    android:id="@+id/total_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total:"
+                    android:layout_below="@id/price_per_min"
+                    android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/total_amount_to_pay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 $"
+                    android:layout_below="@id/price_per_min"
+                    android:layout_toRightOf="@+id/total_price"
+                    android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/parking"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Parking Code:"
+                    android:layout_below="@id/total_amount_to_pay"
+                    android:paddingRight="3dp"/>
+                <TextView
+                    android:id="@+id/parking_code"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="xxxx"
+                    android:layout_below="@id/total_amount_to_pay"
+                    android:layout_toRightOf="@id/parking"
+                    android:paddingRight="3dp"/>
+            </RelativeLayout>
+
+
+
+            <ImageButton
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@drawable/ic_full_screen_black_24dp"
+                android:background="@color/White"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="15dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginStart="10dp"
+                android:id="@+id/btn_full_screen_map"/>
+
+            <ImageButton
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@drawable/ic_refresh_black_24dp"
+                android:background="@color/White"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="50dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginStart="10dp"
+                android:id="@+id/btn_reset_map"/>
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
+
+</RelativeLayout>

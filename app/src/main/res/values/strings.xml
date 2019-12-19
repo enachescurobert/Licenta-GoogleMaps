@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GoogleMaps2018</string>
+    <string name="app_name">Licenta Enachescu Robert</string>
 
     <string name="google_map_api_key">AIzaSyC0q_wBft0yD0AgOwHiJIBgN9c2dkjkW9M</string>
     <!-- Strings related to login -->
@@ -40,7 +40,7 @@
 
 
     <!-- Fragments Names -->
-    <string name="fragment_user_list">User List</string>
+    <string name="fragment_map">User List</string>
     <string name="fragment_image_list">Image List</string>
 
     <!-- Other Strings -->
@@ -48,6 +48,8 @@
     <string name="action_leave_chatroom">Leave chatroom</string>
     <string name="action_chatroom_user_list">User list</string>
     <string name="action_profile">Profile</string>
+
+
 
 
 </resources>
