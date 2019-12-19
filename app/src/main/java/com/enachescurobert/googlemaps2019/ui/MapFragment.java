@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.graphics.Camera;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -67,8 +66,6 @@ import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -83,7 +80,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.enachescurobert.googlemaps2019.Constants.MAPVIEW_BUNDLE_KEY;
 
-public class UserListFragment extends Fragment implements
+public class MapFragment extends Fragment implements
         OnMapReadyCallback,
         View.OnClickListener,
         GoogleMap.OnInfoWindowClickListener,
@@ -92,7 +89,7 @@ public class UserListFragment extends Fragment implements
 {
 
     //constants
-    private static final String TAG = "UserListFragment";
+    private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
     private static final int START_TIME_IN_MILLIS = 0;
 
@@ -149,8 +146,8 @@ public class UserListFragment extends Fragment implements
 
 
 
-    public static UserListFragment newInstance() {
-        return new UserListFragment();
+    public static MapFragment newInstance() {
+        return new MapFragment();
     }
 
     @Override
@@ -168,7 +165,7 @@ public class UserListFragment extends Fragment implements
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_user_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_map, container, false);
         mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = (MapView) view.findViewById(R.id.user_list_map);
 

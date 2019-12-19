@@ -12,21 +12,17 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -493,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
     public void inflateUserListFragment(){
         hideSoftKeyboard();
 
-        UserListFragment fragment = UserListFragment.newInstance();
+        MapFragment fragment = MapFragment.newInstance();
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList(getString(R.string.intent_user_list), mUserList);
 
@@ -505,8 +501,8 @@ public class MainActivity extends AppCompatActivity {
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
-        transaction.replace(R.id.user_maps_container, fragment, getString(R.string.fragment_user_list));
-        transaction.addToBackStack(getString(R.string.fragment_user_list));
+        transaction.replace(R.id.user_maps_container, fragment, getString(R.string.fragment_map));
+        transaction.addToBackStack(getString(R.string.fragment_map));
         transaction.commit();
     }
 
