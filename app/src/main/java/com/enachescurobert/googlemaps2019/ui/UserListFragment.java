@@ -198,12 +198,16 @@ public class UserListFragment extends Fragment implements
 
         initGoogleMap(savedInstanceState);
 
-        for(UserLocation userLocation : mUserLocations){
-            Log.d(TAG,"onCreateView: user location: " +
-                    userLocation.getUser().getUsername());
-            Log.d(TAG,"onCreateView: geopoint: " +
-                    userLocation.getGeoPoint().getLatitude() + ", " +
-                    userLocation.getGeoPoint().getLongitude());
+        try {
+            for(UserLocation userLocation : mUserLocations){
+                Log.d(TAG,"onCreateView: user location: " +
+                        userLocation.getUser().getUsername());
+                Log.d(TAG,"onCreateView: geopoint: " +
+                        userLocation.getGeoPoint().getLatitude() + ", " +
+                        userLocation.getGeoPoint().getLongitude());
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "onCreateView: ERROR -> " + e.getLocalizedMessage());
         }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();

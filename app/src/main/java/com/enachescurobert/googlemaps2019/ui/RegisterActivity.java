@@ -74,11 +74,14 @@ public class RegisterActivity extends AppCompatActivity implements
                         if (task.isSuccessful()){
                             Log.d(TAG, "onComplete: AuthState: " + FirebaseAuth.getInstance().getCurrentUser().getUid());
 
+                            String username = email.substring(0, email.indexOf("@"));
+
                             //insert some default data
                             User user = new User();
                             user.setEmail(email);
-                            user.setUsername(email.substring(0, email.indexOf("@")));
+                            user.setUsername(username);
                             user.setUser_id(FirebaseAuth.getInstance().getUid());
+                            user.setScooter(username.contains("scuter"));
 
                             FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                                     .setTimestampsInSnapshotsEnabled(true)
