@@ -45,6 +45,8 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -422,6 +424,19 @@ public class MapFragment extends Fragment implements
 
             resetMap();
 
+            // Instantiates a new Polygon object and adds points to define a rectangle
+            PolygonOptions rectOptions = new PolygonOptions()
+                    .add(new LatLng(44.5045861, 26.0606003),
+                            new LatLng(44.5048310, 26.1622238),
+                            new LatLng(44.3830111, 26.1711502),
+                            new LatLng(44.3842379, 26.0595703),
+                            new LatLng(44.5055655, 26.0595703))
+                    .fillColor(Color.argb(20, 0, 252, 0))
+                    .strokeColor(Color.rgb(0, 50, 100))
+                    .strokeWidth(3);
+
+            mGoogleMap.addPolygon(rectOptions);
+
             if(mClusterManager == null){
                 mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
             }
@@ -631,7 +646,6 @@ public class MapFragment extends Fragment implements
         //Now all the polyline clicks will be intercepted by the method 'onPolylineClick'
         mGoogleMap.setOnPolylineClickListener(this);
 
-        addMapMarkers();
 
         //we pass 'this' to refer to the interface
         mGoogleMap.setOnInfoWindowClickListener(this);
@@ -646,7 +660,15 @@ public class MapFragment extends Fragment implements
 
         mGoogleMap.setMinZoomPreference(10.0f); // Set a preference for minimum zoom (Zoom out).
         mGoogleMap.setMaxZoomPreference(17.0f); // Set a preference for maximum zoom (Zoom In).
+
+//        Polygon polygon = mGoogleMap.addPolygon(rectOptions);
+
+        addMapMarkers();
+
+
+
     }
+
 
     @Override
     public void onPause() {
