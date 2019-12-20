@@ -64,6 +64,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
+import com.google.maps.android.PolyUtil;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
@@ -127,6 +128,8 @@ public class MapFragment extends Fragment implements
 
     private ThingSpeakApi thingSpeakApi;
 
+    List<LatLng> polygonList = new ArrayList<LatLng>();
+    public LatLng testPoint = new LatLng(44.477, 26.161);
 
     //Paying info
     private TextView minutesPassed;
@@ -190,10 +193,14 @@ public class MapFragment extends Fragment implements
         mStopTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                stopTimer();
-                mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                mTimeAndTotal.setVisibility(View.GONE);
-                showPopup();
+                if (PolyUtil.containsLocation(testPoint, polygonList, false)){
+                    stopTimer();
+                    mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                    mTimeAndTotal.setVisibility(View.GONE);
+                    showPopup();
+                } else {
+                    Toast.makeText(getActivity(), "You are not in the green area", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -418,24 +425,51 @@ public class MapFragment extends Fragment implements
         }
     }
 
-    private void addMapMarkers(){
+    private void addMapPolygon(){
+        if(mGoogleMap != null) {
 
-        if(mGoogleMap != null){
+            try {
+                for (int i = polygonList.size() - 1; i > 0; i--) {
+                    polygonList.remove(i);
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "addMapMarkers: " + e.getLocalizedMessage());
+            }
 
-            resetMap();
+            polygonList.add(new LatLng(44.5045861, 26.0606003));
+            polygonList.add(new LatLng(44.5048310, 26.1622238));
+            polygonList.add(new LatLng(44.3830111, 26.1711502));
+            polygonList.add(new LatLng(44.3842379, 26.0595703));
+            polygonList.add(new LatLng(44.5055655, 26.0595703));
+
+
 
             // Instantiates a new Polygon object and adds points to define a rectangle
             PolygonOptions rectOptions = new PolygonOptions()
-                    .add(new LatLng(44.5045861, 26.0606003),
-                            new LatLng(44.5048310, 26.1622238),
-                            new LatLng(44.3830111, 26.1711502),
-                            new LatLng(44.3842379, 26.0595703),
-                            new LatLng(44.5055655, 26.0595703))
+//                    .add(new LatLng(44.5045861, 26.0606003),
+//                            new LatLng(44.5048310, 26.1622238),
+//                            new LatLng(44.3830111, 26.1711502),
+//                            new LatLng(44.3842379, 26.0595703),
+//                            new LatLng(44.5055655, 26.0595703))
+                    .add(polygonList.get(0),
+                            polygonList.get(1),
+                            polygonList.get(2),
+                            polygonList.get(3),
+                            polygonList.get(4)
+                    )
                     .fillColor(Color.argb(20, 0, 252, 0))
                     .strokeColor(Color.rgb(0, 50, 100))
                     .strokeWidth(3);
 
             mGoogleMap.addPolygon(rectOptions);
+        }
+    }
+
+    private void addMapMarkers(){
+
+        if(mGoogleMap != null){
+
+            resetMap();
 
             if(mClusterManager == null){
                 mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
@@ -663,7 +697,7 @@ public class MapFragment extends Fragment implements
 
 //        Polygon polygon = mGoogleMap.addPolygon(rectOptions);
 
-        addMapMarkers();
+//        addMapMarkers();
 
 
 
@@ -697,6 +731,7 @@ public class MapFragment extends Fragment implements
     public void onClick(View v) {
         if (v.getId() == R.id.btn_reset_map) {
             addMapMarkers();
+            addMapPolygon();
         }
     }
 
@@ -715,22 +750,26 @@ public class MapFragment extends Fragment implements
 
 //                            startEngine();
 
+                            testPoint = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+
                             Log.d(TAG, "onClick: test1234 " + marker.getSnippet() );
 
-                            if (marker.getSnippet().contains("scuter6")){
-                                Log.d(TAG, "Scooter 6: STARTED");
-                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
-                                turnOnEngine();
-                            }else{
-                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                            if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
-                            }
 
-                            generateParkingCode();
+                                if (marker.getSnippet().contains("scuter6")) {
+                                    Log.d(TAG, "Scooter 6: STARTED");
+                                    Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                                    turnOnEngine();
+                                } else {
+                                    Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                                }
 
-                            mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                            mTimeAndTotal.setVisibility(View.VISIBLE);
-                            startTimer();
+                                generateParkingCode();
+
+                                mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                                mTimeAndTotal.setVisibility(View.VISIBLE);
+                                startTimer();
 
 //                            String latitude = String.valueOf(marker.getPosition().latitude);
 //                            String longitude = String.valueOf(marker.getPosition().longitude);
@@ -746,6 +785,9 @@ public class MapFragment extends Fragment implements
 //                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
 //                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
 //                            }
+                            } else {
+                                Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
+                            }
 
                         }
                     })
@@ -842,6 +884,7 @@ public class MapFragment extends Fragment implements
 //        totalPrice;
 
         addMapMarkers();
+        addMapPolygon();
 
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
