@@ -1,7 +1,6 @@
 package com.enachescurobert.googlemaps2019.ui;
 
 import android.Manifest;
-import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -19,8 +18,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,9 +51,15 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
@@ -104,6 +107,7 @@ public class MapFragment extends Fragment implements
 
     Dialog myDialog;
 
+    private ListenerRegistration mUserListEventListener;
 
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
@@ -138,7 +142,7 @@ public class MapFragment extends Fragment implements
 
     private String[] array;
 
-
+    private FirebaseFirestore mDb;
 
 
     public static MapFragment newInstance() {
@@ -153,6 +157,11 @@ public class MapFragment extends Fragment implements
 
             //retreive the list of all the user locations who are in the chatroom
             mUserLocations = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
+
+            mDb = FirebaseFirestore.getInstance();
+
+            getChatroomUsers();
+
         }
 
     }
@@ -1003,6 +1012,69 @@ public class MapFragment extends Fragment implements
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
                 Log.d(TAG, "onFailure: " + t.getMessage());
+            }
+        });
+    }
+
+    private void getChatroomUsers(){
+
+        CollectionReference usersRef = mDb
+                //.collection(getString(R.string.collection_chatrooms))
+                //.document(mChatroom.getChatroom_id())
+                //.document("xwT2T8sasZEaY5g0cwf2")
+                //.collection(getString(R.string.collection_chatroom_user_list));
+                .collection(getString(R.string.collection_users));
+
+        mUserListEventListener = usersRef
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot queryDocumentSnapshots, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.e(TAG, "onEvent: Listen failed.", e);
+                            return;
+                        }
+
+                        if(queryDocumentSnapshots != null){
+
+                            // Clear the list and add all the users again
+                            mUserList.clear();
+                            mUserList = new ArrayList<>();
+
+                            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                                User user = doc.toObject(User.class);
+                                mUserList.add(user);
+
+                                //
+                                getUserLocation(user);
+
+                            }
+
+                            Log.d(TAG, "onEvent: user list size: " + mUserList.size());
+                        }
+                    }
+                });
+    }
+
+    private void getUserLocation(User user){
+        DocumentReference locationRef = mDb
+                .collection(getString(R.string.collection_user_locations))
+                .document(user.getUser_id());
+
+        locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    //if the task is successful
+                    //we can retrieve a result
+                    if(task.getResult().toObject(UserLocation.class) != null){
+                        //if there is actually a location coordinate of the user in the DB
+                        //<<which it should have (because the user has to accept GPS)>>
+                        //add that location
+                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                        //now we need to pass those locations in the fragment
+                        //that will be done in the inflateUserListFragment() method
+                    }
+                }
             }
         });
     }
