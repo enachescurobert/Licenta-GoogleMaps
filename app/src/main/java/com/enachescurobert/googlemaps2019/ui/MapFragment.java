@@ -35,7 +35,6 @@ import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
 import com.enachescurobert.googlemaps2019.util.MyClusterManagerRenderer;
 import com.enachescurobert.googlemaps2019.util.ThingSpeakApi;
-import com.enachescurobert.googlemaps2019.util.ViewWeightAnimationWrapper;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -91,10 +90,6 @@ public class MapFragment extends Fragment implements
     //constants
     private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
-    private static final int START_TIME_IN_MILLIS = 0;
-
-    private static final int MAP_LAYOUT_STATE_CONTRACTED = 0;
-    private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
 
     //widgets
     private RelativeLayout mMapContainer;
@@ -121,7 +116,6 @@ public class MapFragment extends Fragment implements
     //Handler + Runnable -> Responsible for making requests every 3 seconds
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
-    private int mMapLayoutState = 1;
     private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
     private Marker mSelectedMarker = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
@@ -135,7 +129,6 @@ public class MapFragment extends Fragment implements
     //Paying info
     private TextView minutesPassed;
     private TextView totalPrice;
-    private TextView mParkingCode;
 
     //for Google Directions API
     private GeoApiContext mGeoApiContext = null;
@@ -152,18 +145,7 @@ public class MapFragment extends Fragment implements
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
-
-            //retreive the list of all the user locations who are in the chatroom
-            mUserLocations = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
-
-            mDb = FirebaseFirestore.getInstance();
-
-            getChatroomUsers();
-
-        }
-
+        mDb = FirebaseFirestore.getInstance();
     }
 
     @Nullable
@@ -181,8 +163,6 @@ public class MapFragment extends Fragment implements
         array = getResources().getStringArray(R.array.array_codes_parking);
 
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
-
-        mMapContainer = view.findViewById(R.id.map_container);
 
 
 
@@ -202,8 +182,6 @@ public class MapFragment extends Fragment implements
         } catch (Exception e) {
             Log.d(TAG, "onCreateView: ERROR -> " + e.getLocalizedMessage());
         }
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         setUserPosition();
 
@@ -325,8 +303,6 @@ public class MapFragment extends Fragment implements
 
                     // This loops through all the LatLng coordinates of ONE polyline.
                     for(com.google.maps.model.LatLng latLng: decodedPath){
-
-//                        Log.d(TAG, "run: latlng: " + latLng.toString());
 
                         newDecodedPath.add(new LatLng(
                                 latLng.lat,
@@ -475,7 +451,7 @@ public class MapFragment extends Fragment implements
                     int avatar = R.drawable.scooter; //set the default avatar
                     try{
                         avatar = Integer.parseInt(userLocation.getUser().getAvatar());
-                    }catch (NumberFormatException e){
+                    } catch (NumberFormatException e){
                         Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
                                 ", setting default.");
                     }
@@ -516,6 +492,8 @@ public class MapFragment extends Fragment implements
             mClusterManager.cluster();
             //setCameraView();
 
+        } else {
+            Log.d(TAG, "addMapMarkers: Enterd here");
         }
     }
 
@@ -647,6 +625,8 @@ public class MapFragment extends Fragment implements
 
         mGoogleMap = map;
         //setCameraView();
+
+        getChatroomUsers();
 
         //Now all the polyline clicks will be intercepted by the method 'onPolylineClick'
         mGoogleMap.setOnPolylineClickListener(this);

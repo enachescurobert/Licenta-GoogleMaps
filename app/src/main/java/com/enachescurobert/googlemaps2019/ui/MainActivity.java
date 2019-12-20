@@ -12,6 +12,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
@@ -80,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration mChatroomEventListener;
     private FirebaseFirestore mDb;
 
+    private ConstraintLayout seeAllButtons;
+
     // this is going to be responsible for restricting
     // application access if location permissions are not accepted
     private boolean mLocationPermissionGranted = false;
@@ -95,7 +98,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mProgressBar = findViewById(R.id.progressBar);
-//        mChatroomRecyclerView = findViewById(R.id.chatrooms_recycler_view);
+        seeAllButtons = findViewById(R.id.seeAllButtons);
+        seeAllButtons.setVisibility(View.GONE);
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -103,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
         initSupportActionBar();
 
-        getChatroomUsers();
+//        getChatroomUsers();
 
         inflateUserListFragment();
 
@@ -386,6 +390,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+//        inflateUserListFragment();
         if(checkMapServices()){
             if(mLocationPermissionGranted){
                 getUserDetails();
