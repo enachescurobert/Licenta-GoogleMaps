@@ -54,8 +54,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="STOP"
-                    android:layout_toRightOf="@+id/time_passed_value"
-                    android:layout_marginTop="15dp"/>
+                    android:layout_toRightOf="@+id/price_per_min"
+                    android:layout_marginTop="15dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginLeft="6dp" />
 
                 <TextView
                     android:id="@+id/price_per_min"

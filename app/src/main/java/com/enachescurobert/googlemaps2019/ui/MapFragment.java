@@ -116,6 +116,7 @@ public class MapFragment extends Fragment implements
     private ClusterManager mClusterManager;
     private MyClusterManagerRenderer mClusterManagerRenderer;
     private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
+    private boolean isActive = false;
     //Handler + Runnable -> Responsible for making requests every 3 seconds
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
@@ -194,6 +195,7 @@ public class MapFragment extends Fragment implements
             @Override
             public void onClick(View view) {
                 if (PolyUtil.containsLocation(testPoint, polygonList, false)){
+                    isActive = false;
                     stopTimer();
                     mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                     mTimeAndTotal.setVisibility(View.GONE);
@@ -750,26 +752,32 @@ public class MapFragment extends Fragment implements
 
 //                            startEngine();
 
-                            testPoint = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
-
-                            Log.d(TAG, "onClick: test1234 " + marker.getSnippet() );
-
-                            if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
+                            if (isActive) {
+                                Toast.makeText(getActivity(), "YOU ALREADY HAVE ONE RENTED MOPED", Toast.LENGTH_SHORT).show();
+                            } else {
 
 
-                                if (marker.getSnippet().contains("scuter6")) {
-                                    Log.d(TAG, "Scooter 6: STARTED");
-                                    Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
-                                    turnOnEngine();
-                                } else {
-                                    Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
-                                }
+                                testPoint = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
 
-                                generateParkingCode();
+                                Log.d(TAG, "onClick: test1234 " + marker.getSnippet());
 
-                                mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                                mTimeAndTotal.setVisibility(View.VISIBLE);
-                                startTimer();
+                                if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
+
+                                    isActive = true;
+
+                                    if (marker.getSnippet().contains("scuter6")) {
+                                        Log.d(TAG, "Scooter 6: STARTED");
+                                        Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                                        turnOnEngine();
+                                    } else {
+                                        Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    generateParkingCode();
+
+                                    mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                                    mTimeAndTotal.setVisibility(View.VISIBLE);
+                                    startTimer();
 
 //                            String latitude = String.valueOf(marker.getPosition().latitude);
 //                            String longitude = String.valueOf(marker.getPosition().longitude);
@@ -785,10 +793,10 @@ public class MapFragment extends Fragment implements
 //                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
 //                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
 //                            }
-                            } else {
-                                Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
+                                }
                             }
-
                         }
                     })
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
