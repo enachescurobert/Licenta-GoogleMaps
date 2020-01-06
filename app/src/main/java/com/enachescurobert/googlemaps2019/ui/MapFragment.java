@@ -45,7 +45,6 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -58,6 +57,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -71,6 +71,7 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -197,6 +198,7 @@ public class MapFragment extends Fragment implements
                 if (PolyUtil.containsLocation(testPoint, polygonList, false)){
                     isActive = false;
                     stopTimer();
+                    updateTimerOnServer(false);
                     mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                     mTimeAndTotal.setVisibility(View.GONE);
                     showPopup();
@@ -885,11 +887,34 @@ public class MapFragment extends Fragment implements
         }
     }
 
+    private void updateTimerOnServer(boolean shouldStartEngine){
+
+        for(final ClusterMarker clusterMarker: mClusterMarkers) {
+
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                    .setTimestampsInSnapshotsEnabled(true)
+                    .build();
+            mDb.setFirestoreSettings(settings);
+
+            DocumentReference userToUpdate = mDb
+                    .collection(getString(R.string.collection_users))
+                    .document(clusterMarker.getUser().getUser_id());
+
+            userToUpdate.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
+            Date currentDate = new Date();
+            userToUpdate.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+
+        }
+
+    }
+
     private void startTimer(){
 
 
 //        minutesPassed;
 //        totalPrice;
+
+        updateTimerOnServer(true);
 
         addMapMarkers();
         addMapPolygon();
