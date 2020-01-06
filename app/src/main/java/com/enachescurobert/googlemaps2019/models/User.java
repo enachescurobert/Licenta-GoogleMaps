@@ -3,6 +3,10 @@ package com.enachescurobert.googlemaps2019.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.firestore.ServerTimestamp;
+
+import java.util.Date;
+
 public class User implements Parcelable{
 
     private String email;
@@ -12,13 +16,20 @@ public class User implements Parcelable{
     private boolean scooter;
     private boolean engineStarted;
 
-    public User(String email, String user_id, String username, String avatar, boolean scooter, boolean engineStarted) {
+    //this is used for FireStore
+    //if you pass NULL to the engineStartedAt when you insert the object to the DB,
+    // it will insert a timestamp on the exactly time when it was created
+    private @ServerTimestamp
+    Date engineStartedAt;
+
+    public User(String email, String user_id, String username, String avatar, boolean scooter, boolean engineStarted, Date engineStartedAt) {
         this.email = email;
         this.user_id = user_id;
         this.username = username;
         this.avatar = avatar;
         this.scooter = scooter;
         this.engineStarted = engineStarted;
+        this.engineStartedAt = engineStartedAt;
     }
 
     public User() {
@@ -32,6 +43,8 @@ public class User implements Parcelable{
         avatar = in.readString();
         scooter = in.readByte() != 0; // scooter -> true if byte != 0
         engineStarted = in.readByte() != 0;
+        long tmpDate = in.readLong();
+        this.engineStartedAt = tmpDate == -1 ? null : new Date(tmpDate);
     }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
@@ -98,6 +111,14 @@ public class User implements Parcelable{
         this.engineStarted = engineStarted;
     }
 
+    public Date getEngineStartedAt() {
+        return engineStartedAt;
+    }
+
+    public void setEngineStartedAt(Date engineStartedAt) {
+        this.engineStartedAt = engineStartedAt;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -123,6 +144,7 @@ public class User implements Parcelable{
         dest.writeString(avatar);
         dest.writeByte((byte) (scooter ? 1 : 0)); // if scooter == true, byte  -> 1
         dest.writeByte((byte) (engineStarted ? 1 : 0));
+        dest.writeLong(this.engineStartedAt != null ? this.engineStartedAt.getTime() : -1);
     }
 }
 
