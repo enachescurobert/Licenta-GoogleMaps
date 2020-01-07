@@ -62,6 +62,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
@@ -73,7 +74,9 @@ import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -902,18 +905,31 @@ public class MapFragment extends Fragment implements
 
             if (clusterMarker.getUser().getUsername().equals(markerUsername)) {
 
+                //Update the Users collection
                 FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                         .setTimestampsInSnapshotsEnabled(true)
                         .build();
                 mDb.setFirestoreSettings(settings);
 
-                DocumentReference userToUpdate = mDb
+                DocumentReference userRef = mDb
                         .collection(getString(R.string.collection_users))
                         .document(clusterMarker.getUser().getUser_id());
 
-                userToUpdate.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
+                userRef.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
                 Date currentDate = new Date();
-                userToUpdate.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+                userRef.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+
+                //Update the User Locations collection
+                DocumentReference locationRef = mDb
+                        .collection(getString(R.string.collection_user_locations))
+                        .document(clusterMarker.getUser().getUser_id());
+
+                Map<String, Object> userLocationsDocument = new HashMap<>();
+                Map<String, Object> userField = new HashMap<>();
+                userField.put(getString(R.string.collection_field_engine_started), shouldStartEngine);
+                userField.put(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+                userLocationsDocument.put("user", userField);
+                locationRef.set(userLocationsDocument, SetOptions.merge());
 
             }
 
