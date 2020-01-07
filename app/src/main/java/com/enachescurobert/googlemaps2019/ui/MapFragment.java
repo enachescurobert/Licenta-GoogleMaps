@@ -929,7 +929,8 @@ public class MapFragment extends Fragment implements
                 userField.put(getString(R.string.collection_field_engine_started), shouldStartEngine);
                 userField.put(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
                 userLocationsDocument.put("user", userField);
-                locationRef.set(userLocationsDocument, SetOptions.merge());
+//                locationRef.set(userLocationsDocument, SetOptions.merge());
+                locationRef.update(userLocationsDocument);
 
             }
 
