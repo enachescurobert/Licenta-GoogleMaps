@@ -929,8 +929,11 @@ public class MapFragment extends Fragment implements
                 userField.put(getString(R.string.collection_field_engine_started), shouldStartEngine);
                 userField.put(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
                 userLocationsDocument.put("user", userField);
-//                locationRef.set(userLocationsDocument, SetOptions.merge());
-                locationRef.update(userLocationsDocument);
+                locationRef.set(userLocationsDocument, SetOptions.merge());
+
+//                TODO -> use update instead of set
+//                FIXME -> when changing from set to update, it will update the user and it will delete the other fields
+//                locationRef.update(userLocationsDocument);
 
             }
 
