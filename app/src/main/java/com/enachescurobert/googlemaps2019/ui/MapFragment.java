@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -83,6 +84,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import static android.content.Context.MODE_PRIVATE;
 import static com.enachescurobert.googlemaps2019.Constants.MAPVIEW_BUNDLE_KEY;
 
 public class MapFragment extends Fragment implements
@@ -94,6 +96,7 @@ public class MapFragment extends Fragment implements
     //constants
     private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
+    private static final String ACTIVE_SCOOTER_ID = "";
 
     //widgets
     private RelativeLayout mMapContainer;
@@ -196,9 +199,15 @@ public class MapFragment extends Fragment implements
             @Override
             public void onClick(View view) {
                 if (PolyUtil.containsLocation(testPoint, polygonList, false)){
+
                     isActive = false;
                     stopTimer();
-                    updateTimerOnServer(false);
+
+                    SharedPreferences prefs = getActivity().getSharedPreferences(ACTIVE_SCOOTER_ID, MODE_PRIVATE);
+                    String tappedMarkerUsername = prefs.getString("usernameOfStartedScooter", "ERROR");//"No name defined" is the default value.
+
+                    updateTimerOnServer(false, tappedMarkerUsername);
+
                     mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                     mTimeAndTotal.setVisibility(View.GONE);
                     showPopup();
@@ -779,7 +788,7 @@ public class MapFragment extends Fragment implements
 
                                     mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                                     mTimeAndTotal.setVisibility(View.VISIBLE);
-                                    startTimer();
+                                    startTimer(marker);
 
 //                            String latitude = String.valueOf(marker.getPosition().latitude);
 //                            String longitude = String.valueOf(marker.getPosition().longitude);
@@ -887,34 +896,42 @@ public class MapFragment extends Fragment implements
         }
     }
 
-    private void updateTimerOnServer(boolean shouldStartEngine){
+    private void updateTimerOnServer(boolean shouldStartEngine, String markerUsername){
 
         for(final ClusterMarker clusterMarker: mClusterMarkers) {
 
-            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                    .setTimestampsInSnapshotsEnabled(true)
-                    .build();
-            mDb.setFirestoreSettings(settings);
+            if (clusterMarker.getUser().getUsername().equals(markerUsername)) {
 
-            DocumentReference userToUpdate = mDb
-                    .collection(getString(R.string.collection_users))
-                    .document(clusterMarker.getUser().getUser_id());
+                FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                        .setTimestampsInSnapshotsEnabled(true)
+                        .build();
+                mDb.setFirestoreSettings(settings);
 
-            userToUpdate.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
-            Date currentDate = new Date();
-            userToUpdate.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+                DocumentReference userToUpdate = mDb
+                        .collection(getString(R.string.collection_users))
+                        .document(clusterMarker.getUser().getUser_id());
+
+                userToUpdate.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
+                Date currentDate = new Date();
+                userToUpdate.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+
+            }
 
         }
 
     }
 
-    private void startTimer(){
+    private void startTimer(Marker marker){
 
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(ACTIVE_SCOOTER_ID, MODE_PRIVATE).edit();
 
-//        minutesPassed;
-//        totalPrice;
+        String marketSnippet = marker.getSnippet();
+        String markerUsername = marketSnippet.substring(marketSnippet.lastIndexOf(" ") + 1);
 
-        updateTimerOnServer(true);
+        editor.putString("usernameOfStartedScooter", markerUsername);
+        editor.apply();
+
+        updateTimerOnServer(true, markerUsername);
 
         addMapMarkers();
         addMapPolygon();
