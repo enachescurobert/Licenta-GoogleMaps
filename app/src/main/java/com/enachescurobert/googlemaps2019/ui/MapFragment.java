@@ -100,20 +100,16 @@ public class MapFragment extends Fragment implements
     private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
     private static final String ACTIVE_SCOOTER_ID = "";
-
+    public LatLng testPoint = new LatLng(44.477, 26.161);
+    Dialog myDialog;
+    List<LatLng> polygonList = new ArrayList<LatLng>();
     //widgets
     private RelativeLayout mMapContainer;
     private RelativeLayout mTimeAndTotal;
-
     private Button mStopTime;
-
     //UI component
     private MapView mMapView;
-
-    Dialog myDialog;
-
     private ListenerRegistration mUserListEventListener;
-
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
     private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
@@ -133,12 +129,7 @@ public class MapFragment extends Fragment implements
     private int minutes = 0;
     private int seconds = 0;
     private Timer myTimer;
-
     private ThingSpeakApi thingSpeakApi;
-
-    List<LatLng> polygonList = new ArrayList<LatLng>();
-    public LatLng testPoint = new LatLng(44.477, 26.161);
-
     //Paying info
     private TextView minutesPassed;
     private TextView totalPrice;
@@ -184,8 +175,10 @@ public class MapFragment extends Fragment implements
 
         initGoogleMap(savedInstanceState);
 
+
+
         try {
-            for(UserLocation userLocation : mUserLocations){
+            for (UserLocation userLocation : mUserLocations) {
                 Log.d(TAG,"onCreateView: user location: " +
                         userLocation.getUser().getUsername());
                 Log.d(TAG,"onCreateView: geopoint: " +
@@ -201,7 +194,7 @@ public class MapFragment extends Fragment implements
         mStopTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (PolyUtil.containsLocation(testPoint, polygonList, false)){
+                if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
                     isActive = false;
                     stopTimer();
@@ -221,9 +214,9 @@ public class MapFragment extends Fragment implements
         });
 
         Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl("https://api.thingspeak.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build();
+                .baseUrl("https://api.thingspeak.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
         thingSpeakApi = retrofit.create(ThingSpeakApi.class);
 
@@ -248,21 +241,21 @@ public class MapFragment extends Fragment implements
         );
     }
 
-    private void removeTripMarkers(){
-        for(Marker marker: mTripMarkers){
+    private void removeTripMarkers() {
+        for (Marker marker: mTripMarkers) {
             marker.remove();
         }
     }
 
-    private void resetSelectedMarker(){
-        if(mSelectedMarker != null){
+    private void resetSelectedMarker() {
+        if(mSelectedMarker != null) {
             mSelectedMarker.setVisible(true);
             mSelectedMarker = null;
             removeTripMarkers();
         }
     }
 
-    private void calculateDirections(Marker marker){
+    private void calculateDirections(Marker marker) {
         Log.d(TAG, "calculateDirections: calculating directions.");
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
@@ -301,14 +294,14 @@ public class MapFragment extends Fragment implements
     }
 
     //This will be posted on the Main Thread
-    private void addPolylinesToMap(final DirectionsResult result){
+    private void addPolylinesToMap(final DirectionsResult result) {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
                 Log.d(TAG, "run: result routes: " + result.routes.length);
 
-                if(mPolyLinesData.size()>0){
-                    for(PolylineData polylineData: mPolyLinesData){
+                if (mPolyLinesData.size()>0) {
+                    for (PolylineData polylineData: mPolyLinesData) {
                         polylineData.getPolyline().remove();
                     }
                     mPolyLinesData.clear();
@@ -318,7 +311,7 @@ public class MapFragment extends Fragment implements
                 double duration = 999999;
 
                 //we get a google DirectionsRoute object
-                for(DirectionsRoute route: result.routes){
+                for (DirectionsRoute route: result.routes) {
                     Log.d(TAG, "run: leg: " + route.legs[0].toString());
 
                     //we get a decodedPath and that's going to have all the little points for each of the Polylines
@@ -327,7 +320,7 @@ public class MapFragment extends Fragment implements
                     List<LatLng> newDecodedPath = new ArrayList<>();
 
                     // This loops through all the LatLng coordinates of ONE polyline.
-                    for(com.google.maps.model.LatLng latLng: decodedPath){
+                    for (com.google.maps.model.LatLng latLng: decodedPath) {
 
                         newDecodedPath.add(new LatLng(
                                 latLng.lat,
@@ -343,7 +336,7 @@ public class MapFragment extends Fragment implements
 
 
                     double tempDuration = route.legs[0].duration.inSeconds;
-                    if(tempDuration < duration){
+                    if(tempDuration < duration) {
                         duration = tempDuration;
                         onPolylineClick(polyline);
                         zoomRoute(polyline.getPoints());
@@ -358,7 +351,7 @@ public class MapFragment extends Fragment implements
 
 
     //responsible for actually start the Runnable
-    private void startUserLocationsRunnable(){
+    private void startUserLocationsRunnable() {
         Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
         mHandler.postDelayed(mRunnable = new Runnable() {
             @Override
@@ -370,15 +363,15 @@ public class MapFragment extends Fragment implements
         }, LOCATION_UPDATE_INTERVAL);
     }
 
-    private void stopLocationUpdates(){
+    private void stopLocationUpdates() {
         mHandler.removeCallbacks(mRunnable);
     }
 
-    private void retrieveUserLocations(){
+    private void retrieveUserLocations() {
         Log.d(TAG, "retrieveUserLocations: retrieving location of all users in the chatroom.");
 
         try{
-            for(final ClusterMarker clusterMarker: mClusterMarkers){
+            for (final ClusterMarker clusterMarker: mClusterMarkers) {
 
                 DocumentReference userLocationRef = FirebaseFirestore.getInstance()
                         .collection(getString(R.string.collection_user_locations))
@@ -387,7 +380,7 @@ public class MapFragment extends Fragment implements
                 userLocationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if(task.isSuccessful()){
+                        if(task.isSuccessful()) {
 
                             final UserLocation updatedUserLocation = task.getResult().toObject(UserLocation.class);
 
@@ -415,17 +408,17 @@ public class MapFragment extends Fragment implements
                     }
                 });
             }
-        }catch (IllegalStateException e){
+        }catch (IllegalStateException e) {
             Log.e(TAG, "retrieveUserLocations: Fragment was destroyed during Firestore query. Ending query." + e.getMessage() );
         }
 
     }
 
-    private void resetMap(){
+    private void resetMap() {
         if(mGoogleMap != null) {
             mGoogleMap.clear();
 
-            if(mClusterManager != null){
+            if(mClusterManager != null) {
                 mClusterManager.clearItems();
             }
 
@@ -434,14 +427,17 @@ public class MapFragment extends Fragment implements
                 mClusterMarkers = new ArrayList<>();
             }
 
-            if(mPolyLinesData.size() > 0){
+            if(mPolyLinesData.size() > 0) {
                 mPolyLinesData.clear();
                 mPolyLinesData = new ArrayList<>();
             }
+
+            addMapPolygon();
+
         }
     }
 
-    private void addMapPolygon(){
+    private void addMapPolygon() {
         if(mGoogleMap != null) {
 
             try {
@@ -462,11 +458,11 @@ public class MapFragment extends Fragment implements
 
             // Instantiates a new Polygon object and adds points to define a rectangle
             PolygonOptions rectOptions = new PolygonOptions()
-//                    .add(new LatLng(44.5045861, 26.0606003),
-//                            new LatLng(44.5048310, 26.1622238),
-//                            new LatLng(44.3830111, 26.1711502),
-//                            new LatLng(44.3842379, 26.0595703),
-//                            new LatLng(44.5055655, 26.0595703))
+                    //                    .add(new LatLng(44.5045861, 26.0606003),
+                    //                            new LatLng(44.5048310, 26.1622238),
+                    //                            new LatLng(44.3830111, 26.1711502),
+                    //                            new LatLng(44.3842379, 26.0595703),
+                    //                            new LatLng(44.5055655, 26.0595703))
                     .add(polygonList.get(0),
                             polygonList.get(1),
                             polygonList.get(2),
@@ -481,88 +477,78 @@ public class MapFragment extends Fragment implements
         }
     }
 
-    private void addMapMarkers(){
+    private void addMapMarkers() {
 
-        if(mGoogleMap != null){
+        resetMap();
 
-            resetMap();
+        if(mClusterManager == null) {
+            mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
+        }
+        if(mClusterManagerRenderer == null) {
+            mClusterManagerRenderer = new MyClusterManagerRenderer(
+                    getActivity(),
+                    mGoogleMap,
+                    mClusterManager
+            );
+            mClusterManager.setRenderer(mClusterManagerRenderer);
+        }
 
-            if(mClusterManager == null){
-                mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
-            }
-            if(mClusterManagerRenderer == null){
-                mClusterManagerRenderer = new MyClusterManagerRenderer(
-                        getActivity(),
-                        mGoogleMap,
-                        mClusterManager
-                );
-                mClusterManager.setRenderer(mClusterManagerRenderer);
-            }
-
-            for(UserLocation userLocation: mUserLocations){
-                Log.d(TAG, "addMapMarkers: locations: " +
-                        userLocation.getGeoPoint().toString());
-                try{
-                    String snippet = "";
-                    if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
-                        snippet = "this is you";
-                    }
-                    else{
-                        snippet = "Determine route to " +
-                                userLocation.getUser().getUsername() + "?";
-                    }
-
-                    //int avatar = R.drawable.cwm_logo; //set the default avatar
-                    int avatar = R.drawable.scooter; //set the default avatar
-                    try{
-                        avatar = Integer.parseInt(userLocation.getUser().getAvatar());
-                    } catch (NumberFormatException e){
-                        Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
-                                ", setting default.");
-                    }
-                    ClusterMarker newClusterMarker = new ClusterMarker(
-                                    new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
-                                    userLocation.getUser().getUsername(),
-                                    snippet,
-                                    avatar,
-                                    userLocation.getUser()
-
-                    );
-
-                    String scuterSauUtilizator = userLocation.getUser().getUsername();
-
-                    if(scuterSauUtilizator.toString().contains("scuter")) {
-                        //to actually add the marker
-                        mClusterManager.addItem(newClusterMarker);
-                        //the cluster manager is the one who is actually displayed on the map
-                        mClusterMarkers.add(newClusterMarker);
-                        //the cluster marker is just a tool for us to keep the track of the markers on the map
-
-                        Log.d(TAG, "addMapMarkers: Added: " + userLocation.getUser().getUsername());
-
-                    }
-
-//                    if(scuterSauUtilizator.toString().contains("scuter6")) {
-//
-//
-//
-//
-//                    }
-
-                }catch (NullPointerException e){
-                    Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+        for (UserLocation userLocation: mUserLocations) {
+            Log.d(TAG, "addMapMarkers: locations: " +
+                    userLocation.getGeoPoint().toString());
+            try{
+                String snippet = "";
+                if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
+                    snippet = "this is you";
                 }
-            }
-            //to add everything to the map
-            mClusterManager.cluster();
-            //setCameraView();
+                else{
+                    snippet = "Determine route to " +
+                            userLocation.getUser().getUsername() + "?";
+                }
 
-        } else {
-            Log.d(TAG, "addMapMarkers: Enterd here");
+                //int avatar = R.drawable.cwm_logo; //set the default avatar
+                int avatar = R.drawable.scooter; //set the default avatar
+                try{
+                    avatar = Integer.parseInt(userLocation.getUser().getAvatar());
+                } catch (NumberFormatException e) {
+                    Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
+                            ", setting default.");
+                }
+                ClusterMarker newClusterMarker = new ClusterMarker(
+                        new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
+                        userLocation.getUser().getUsername(),
+                        snippet,
+                        avatar,
+                        userLocation.getUser()
+
+                );
+
+                String scuterSauUtilizator = userLocation.getUser().getUsername();
+
+                if(scuterSauUtilizator.toString().contains("scuter")) {
+                    //to actually add the marker
+                    mClusterManager.addItem(newClusterMarker);
+                    //the cluster manager is the one who is actually displayed on the map
+                    mClusterMarkers.add(newClusterMarker);
+                    //the cluster marker is just a tool for us to keep the track of the markers on the map
+
+                    Log.d(TAG, "addMapMarkers: Added: " + userLocation.getUser().getUsername());
+
+                }
+
+            }catch (NullPointerException e) {
+                Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+            }
+        }
+        //to add everything to the map
+        try {
+            mClusterManager.cluster();
+        } catch (Exception e) {
+            Log.e(TAG, "mClusterManager issue: " + e.getLocalizedMessage());
         }
     }
 
-    private void setCameraView(){
+    private void setCameraView() {
 
         //we want to define the top right and bottom left for our boundary
         //Overall map view window: 0.2 * 0.2 = 0.04
@@ -573,16 +559,16 @@ public class MapFragment extends Fragment implements
         double rightBoundary = mUserPosition.getGeoPoint().getLongitude() + .1;
 
         mMapBoundary = new LatLngBounds(
-            new LatLng(bottomBoundary, leftBoundary),
-            new LatLng(topBoundary, rightBoundary)
+                new LatLng(bottomBoundary, leftBoundary),
+                new LatLng(topBoundary, rightBoundary)
         );
 
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary,0));
     }
 
-    private void setUserPosition(){
-        for(UserLocation userLocation : mUserLocations){
-            if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+    private void setUserPosition() {
+        for (UserLocation userLocation : mUserLocations) {
+            if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
                 mUserPosition = userLocation;
             }
         }
@@ -604,7 +590,7 @@ public class MapFragment extends Fragment implements
 
         //that's going to instantiate our Google API context object
         //which is what we use to calculate directions
-        if(mGeoApiContext == null){
+        if(mGeoApiContext == null) {
             mGeoApiContext = new GeoApiContext.Builder()
                     .apiKey(getString(R.string.google_map_api_key))
                     .build();
@@ -711,9 +697,9 @@ public class MapFragment extends Fragment implements
         mGoogleMap.setMinZoomPreference(10.0f); // Set a preference for minimum zoom (Zoom out).
         mGoogleMap.setMaxZoomPreference(17.0f); // Set a preference for maximum zoom (Zoom In).
 
-//        Polygon polygon = mGoogleMap.addPolygon(rectOptions);
+        //        Polygon polygon = mGoogleMap.addPolygon(rectOptions);
 
-//        addMapMarkers();
+        //        addMapMarkers();
 
 
 
@@ -747,7 +733,6 @@ public class MapFragment extends Fragment implements
     public void onClick(View v) {
         if (v.getId() == R.id.btn_reset_map) {
             addMapMarkers();
-            addMapPolygon();
         }
     }
 
@@ -756,7 +741,7 @@ public class MapFragment extends Fragment implements
 
 
 
-        if(marker.getTitle().contains("Route #")){
+        if(marker.getTitle().contains("Route #")) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setMessage("Do you really want to start the engine of the scooter? \n\nWe charge: 0.5$/minute + 1$ when engine starts")
                     .setCancelable(true)
@@ -764,7 +749,7 @@ public class MapFragment extends Fragment implements
                         public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
 
 
-//                            startEngine();
+                            //                            startEngine();
 
                             if (isActive) {
                                 Toast.makeText(getActivity(), "YOU ALREADY HAVE ONE RENTED MOPED", Toast.LENGTH_SHORT).show();
@@ -793,20 +778,20 @@ public class MapFragment extends Fragment implements
                                     mTimeAndTotal.setVisibility(View.VISIBLE);
                                     startTimer(marker);
 
-//                            String latitude = String.valueOf(marker.getPosition().latitude);
-//                            String longitude = String.valueOf(marker.getPosition().longitude);
-//                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
-//                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-//                            mapIntent.setPackage("com.google.android.apps.maps");
-//
-//                            try{
-//                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-//                                    startActivity(mapIntent);
-//                                }
-//                            }catch (NullPointerException e){
-//                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
-//                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
-//                            }
+                                    //                            String latitude = String.valueOf(marker.getPosition().latitude);
+                                    //                            String longitude = String.valueOf(marker.getPosition().longitude);
+                                    //                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+                                    //                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                                    //                            mapIntent.setPackage("com.google.android.apps.maps");
+                                    //
+                                    //                            try{
+                                    //                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                                    //                                    startActivity(mapIntent);
+                                    //                                }
+                                    //                            }catch (NullPointerException e) {
+                                    //                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
+                                    //                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
+                                    //                            }
                                 } else {
                                     Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
                                 }
@@ -822,7 +807,7 @@ public class MapFragment extends Fragment implements
             alert.show();
         }
         else{
-            if(marker.getSnippet().equals("This is you")){
+            if(marker.getSnippet().equals("This is you")) {
                 marker.hideInfoWindow();
             }
             else{
@@ -862,10 +847,10 @@ public class MapFragment extends Fragment implements
     public void onPolylineClick(Polyline polyline) {
 
         int index = 0;
-        for(PolylineData polylineData: mPolyLinesData){
+        for (PolylineData polylineData: mPolyLinesData) {
             index++;
             Log.d(TAG, "onPolylineClick: toString: " + polylineData.toString());
-            if(polyline.getId().equals(polylineData.getPolyline().getId())){
+            if(polyline.getId().equals(polylineData.getPolyline().getId())) {
                 polylineData.getPolyline().setColor(ContextCompat.getColor(getActivity(), R.color.blue1));
                 polylineData.getPolyline().setZIndex(1);
 
@@ -875,11 +860,11 @@ public class MapFragment extends Fragment implements
                         polylineData.getLeg().endLocation.lng
                 );
 
-//                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
-//                        .position(endLocation)
-//                        .title("Trip #" + index)
-//                        .snippet("Duration: " + polylineData.getLeg().duration)
-//                );
+                //                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
+                //                        .position(endLocation)
+                //                        .title("Trip #" + index)
+                //                        .snippet("Duration: " + polylineData.getLeg().duration)
+                //                );
 
                 Marker marker = mGoogleMap.addMarker(new MarkerOptions()
                         .position(endLocation)
@@ -899,9 +884,9 @@ public class MapFragment extends Fragment implements
         }
     }
 
-    private void updateTimerOnServer(boolean shouldStartEngine, String markerUsername){
+    private void updateTimerOnServer(boolean shouldStartEngine, String markerUsername) {
 
-        for(final ClusterMarker clusterMarker: mClusterMarkers) {
+        for (final ClusterMarker clusterMarker: mClusterMarkers) {
 
             if (clusterMarker.getUser().getUsername().equals(markerUsername)) {
 
@@ -931,9 +916,9 @@ public class MapFragment extends Fragment implements
                 userLocationsDocument.put("user", userField);
                 locationRef.set(userLocationsDocument, SetOptions.merge());
 
-//                TODO -> use update instead of set
-//                FIXME -> when changing from set to update, it will update the user and it will delete the other fields
-//                locationRef.update(userLocationsDocument);
+                //                TODO -> use update instead of set
+                //                FIXME -> when changing from set to update, it will update the user and it will delete the other fields
+                //                locationRef.update(userLocationsDocument);
 
             }
 
@@ -941,7 +926,7 @@ public class MapFragment extends Fragment implements
 
     }
 
-    private void startTimer(Marker marker){
+    private void startTimer(Marker marker) {
 
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(ACTIVE_SCOOTER_ID, MODE_PRIVATE).edit();
 
@@ -953,9 +938,6 @@ public class MapFragment extends Fragment implements
 
         updateTimerOnServer(true, markerUsername);
 
-        addMapMarkers();
-        addMapPolygon();
-
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
             @Override
@@ -964,7 +946,7 @@ public class MapFragment extends Fragment implements
                     @Override
                     public void run() {
 
-                        if(seconds==59){
+                        if(seconds==59) {
                             minutes++;
                             seconds =0;
                             minutesPassed.setText(minutes + ":" +seconds);
@@ -983,7 +965,7 @@ public class MapFragment extends Fragment implements
     }
 
 
-    private void stopTimer(){
+    private void stopTimer() {
         if(myTimer != null) {
             myTimer.cancel();
         }
@@ -1000,7 +982,7 @@ public class MapFragment extends Fragment implements
 
         minutesPassedPopup = (TextView) myDialog.findViewById(R.id.minutes_passed);
 
-        if(minutes == 1){
+        if(minutes == 1) {
             minutesPassedPopup.setText(String.valueOf("One minute"));
         }else {
             minutesPassedPopup.setText(String.valueOf(minutes + " minutes"));
@@ -1073,7 +1055,7 @@ public class MapFragment extends Fragment implements
             //no error, so start intent
             startActivity(Intent.createChooser(mEmailIntent, "Send email"));
         }
-        catch (Exception e){
+        catch (Exception e) {
             //if anything goes wrong e.g no internet or email client
             //get and show exception
             Toast.makeText(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
@@ -1081,14 +1063,14 @@ public class MapFragment extends Fragment implements
     }
 
 
-    private void generateParkingCode(){
+    private void generateParkingCode() {
         String randomStr = array[new Random().nextInt(array.length)];
 
         TextView mParkingCode = (TextView) getActivity().findViewById(R.id.parking_code);
 
         try {
             mParkingCode.setText(randomStr);
-        }catch (Exception e){
+        }catch (Exception e) {
             Log.e(TAG, "generateParkingCode: " + e.getMessage());
         }
         Log.d(TAG, "generateParkingCode: the generated code is " + randomStr);
@@ -1131,7 +1113,7 @@ public class MapFragment extends Fragment implements
         });
     }
 
-    private void getChatroomUsers(){
+    private void getChatroomUsers() {
 
         CollectionReference usersRef = mDb
                 //.collection(getString(R.string.collection_chatrooms))
@@ -1149,7 +1131,7 @@ public class MapFragment extends Fragment implements
                             return;
                         }
 
-                        if(queryDocumentSnapshots != null){
+                        if(queryDocumentSnapshots != null) {
 
                             // Clear the list and add all the users again
                             mUserList.clear();
@@ -1170,7 +1152,7 @@ public class MapFragment extends Fragment implements
                 });
     }
 
-    private void getUserLocation(User user){
+    private void getUserLocation(User user) {
         DocumentReference locationRef = mDb
                 .collection(getString(R.string.collection_user_locations))
                 .document(user.getUser_id());
@@ -1178,14 +1160,18 @@ public class MapFragment extends Fragment implements
         locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if(task.isSuccessful()){
+                if(task.isSuccessful()) {
                     //if the task is successful
                     //we can retrieve a result
-                    if(task.getResult().toObject(UserLocation.class) != null){
+                    if(task.getResult().toObject(UserLocation.class) != null) {
                         //if there is actually a location coordinate of the user in the DB
                         //<<which it should have (because the user has to accept GPS)>>
                         //add that location
                         mUserLocations.add(task.getResult().toObject(UserLocation.class));
+
+    /*                        FIXME -> THIS METHOD SHOULD NOT BE HERE
+                                    BECAUSE IT WILL BE CALLED MULTIPLE TIMES */
+                        addMapMarkers();
                         //now we need to pass those locations in the fragment
                         //that will be done in the inflateUserListFragment() method
                     }
