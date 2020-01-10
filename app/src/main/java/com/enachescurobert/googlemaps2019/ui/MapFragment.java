@@ -177,8 +177,6 @@ public class MapFragment extends Fragment implements
 
         initGoogleMap(savedInstanceState);
 
-
-
         try {
             for (UserLocation userLocation : mUserLocations) {
                 Log.d(TAG,"onCreateView: user location: " +
@@ -745,7 +743,11 @@ public class MapFragment extends Fragment implements
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.btn_reset_map) {
-            addMapMarkers();
+            if (mGoogleMap == null) {
+                getActivity().recreate();
+            } else {
+                addMapMarkers();
+            }
         }
     }
 
