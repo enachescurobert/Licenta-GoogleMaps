@@ -441,6 +441,12 @@ public class MapFragment extends Fragment implements
 
             addMapPolygon();
 
+//            mGoogleMap.addCircle(new CircleOptions()
+//            .center(new LatLng(44.5068333, 26.2080217))
+//            .radius(900)
+//            .strokeWidth(1)
+//            .fillColor(Color.BLUE));
+
         }
     }
 
@@ -685,6 +691,14 @@ public class MapFragment extends Fragment implements
         map.setMyLocationEnabled(true);
         //map.getUiSettings().setMyLocationButtonEnabled(false);
 
+//        map.setTrafficEnabled(true);
+
+        LatLngBounds latLngBounds= new LatLngBounds(
+                        new LatLng(44.3400563,  25.9503937),
+                        new LatLng(44.5393453, 26.2511444));
+
+        map.setLatLngBoundsForCameraTarget(latLngBounds);
+
         mGoogleMap = map;
         //setCameraView();
 
@@ -775,7 +789,7 @@ public class MapFragment extends Fragment implements
 
                                 Log.d(TAG, "onClick: test1234 " + marker.getSnippet());
 
-                                //    FIXME -> IF YOU ARE OUTSIDE THE GREEN AREA AND TRY TO START AN ENGINE, IT WILL FCKING CRASH
+                                //    TODO -> THE USER SHOULD START THE ENGINE ONLY IF IT'S REALLY CLOSE TO THE SCOOTER
                                 if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
                                     isActive = true;
