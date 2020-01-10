@@ -99,7 +99,9 @@ public class MapFragment extends Fragment implements
     //constants
     private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
-    private static final String ACTIVE_SCOOTER_ID = "";
+    private static final String SCOOTER_PREFS = "scooterPrefs";
+    private static final String ACTIVE_SCOOTER_USERNAME = "usernameOfStartedScooter";
+    private static final String NO_ACTIVE_SCOOTER = "no active scooter";
     public LatLng testPoint = new LatLng(44.477, 26.161);
     Dialog myDialog;
     List<LatLng> polygonList = new ArrayList<LatLng>();
@@ -199,10 +201,14 @@ public class MapFragment extends Fragment implements
                     isActive = false;
                     stopTimer();
 
-                    SharedPreferences prefs = getActivity().getSharedPreferences(ACTIVE_SCOOTER_ID, MODE_PRIVATE);
-                    String tappedMarkerUsername = prefs.getString("usernameOfStartedScooter", "ERROR");//"No name defined" is the default value.
+                    SharedPreferences prefs = getActivity().getSharedPreferences(SCOOTER_PREFS, MODE_PRIVATE);
+                    String tappedMarkerUsername = prefs.getString(ACTIVE_SCOOTER_USERNAME, NO_ACTIVE_SCOOTER);//"no active scooter is the default value.
 
                     updateTimerOnServer(false, tappedMarkerUsername);
+
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString(ACTIVE_SCOOTER_USERNAME, NO_ACTIVE_SCOOTER);
+                    editor.apply();
 
                     mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
                     mTimeAndTotal.setVisibility(View.GONE);
@@ -932,12 +938,12 @@ public class MapFragment extends Fragment implements
 
     private void startTimer(Marker marker) {
 
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(ACTIVE_SCOOTER_ID, MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(SCOOTER_PREFS, MODE_PRIVATE).edit();
 
         String marketSnippet = marker.getSnippet();
         String markerUsername = marketSnippet.substring(marketSnippet.lastIndexOf(" ") + 1);
 
-        editor.putString("usernameOfStartedScooter", markerUsername);
+        editor.putString(ACTIVE_SCOOTER_USERNAME, markerUsername);
         editor.apply();
 
         updateTimerOnServer(true, markerUsername);
