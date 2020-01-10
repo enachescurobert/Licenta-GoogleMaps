@@ -258,6 +258,9 @@ public class MapFragment extends Fragment implements
     private void calculateDirections(Marker marker) {
         Log.d(TAG, "calculateDirections: calculating directions.");
 
+//        TODO -> if (registered)
+//        setUserPosition();
+
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
                 marker.getPosition().latitude,
                 marker.getPosition().longitude
@@ -566,6 +569,10 @@ public class MapFragment extends Fragment implements
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary,0));
     }
 
+//    FIXME -> IT CRASHES AFTER REGISTER WHEN USER TRIES TO CALCULATE DIRECTIONS
+    // mUserPosition is null
+    // setUserPosition won't work because
+    // after registration, mUserLocations should be update !!!!!
     private void setUserPosition() {
         for (UserLocation userLocation : mUserLocations) {
             if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
@@ -760,6 +767,7 @@ public class MapFragment extends Fragment implements
 
                                 Log.d(TAG, "onClick: test1234 " + marker.getSnippet());
 
+                                //    FIXME -> IF YOU ARE OUTSIDE THE GREEN AREA AND TRY TO START AN ENGINE, IT WILL FCKING CRASH
                                 if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
                                     isActive = true;
@@ -916,10 +924,6 @@ public class MapFragment extends Fragment implements
                 userLocationsDocument.put("user", userField);
                 locationRef.set(userLocationsDocument, SetOptions.merge());
 
-                //                TODO -> use update instead of set
-                //                FIXME -> when changing from set to update, it will update the user and it will delete the other fields
-                //                locationRef.update(userLocationsDocument);
-
             }
 
         }
@@ -942,6 +946,11 @@ public class MapFragment extends Fragment implements
         myTimer.schedule(new TimerTask() {
             @Override
             public void run() {
+
+                if (getActivity() == null) {
+                    return;
+                }
+
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -1113,6 +1122,7 @@ public class MapFragment extends Fragment implements
         });
     }
 
+    //    FIXME -> IT WILL FREEZE WHEN A NEW SCOOTER IS ADDED ON MAP
     private void getChatroomUsers() {
 
         CollectionReference usersRef = mDb
