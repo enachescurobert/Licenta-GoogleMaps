@@ -143,6 +143,8 @@ public class MapFragment extends Fragment implements
 
     private FirebaseFirestore mDb;
 
+    private int usersCount = 0;
+
 
     public static MapFragment newInstance() {
         return new MapFragment();
@@ -191,6 +193,9 @@ public class MapFragment extends Fragment implements
 
         setUserPosition();
 
+/*        TODO -> Check if any engine is still on
+                  Continue the count
+*/
         mStopTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -1201,9 +1206,15 @@ public class MapFragment extends Fragment implements
                         //add that location
                         mUserLocations.add(task.getResult().toObject(UserLocation.class));
 
-    /*                        FIXME -> THIS METHOD SHOULD NOT BE HERE
-                                    BECAUSE IT WILL BE CALLED MULTIPLE TIMES */
-                        addMapMarkers();
+                        usersCount++;
+
+                    //  The markers will be added on the map only after the final
+                    //  onComplete is called
+                        if ( mUserList.size()  == usersCount ) {
+                            addMapMarkers();
+                            usersCount = 0;
+                        }
+
                         //now we need to pass those locations in the fragment
                         //that will be done in the inflateUserListFragment() method
                     }
