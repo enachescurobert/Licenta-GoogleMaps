@@ -267,7 +267,7 @@ public class MapFragment extends Fragment implements
     private void calculateDirections(Marker marker) {
         Log.d(TAG, "calculateDirections: calculating directions.");
 
-//        TODO -> if (registered)
+//        TODO -> if (registered) -> update position
 //        setUserPosition();
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
@@ -584,10 +584,10 @@ public class MapFragment extends Fragment implements
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary,0));
     }
 
-//    FIXME -> IT CRASHES AFTER REGISTER WHEN USER TRIES TO CALCULATE DIRECTIONS
+//    TODO ->
     // mUserPosition is null
     // setUserPosition won't work because
-    // after registration, mUserLocations should be update !!!!!
+    // after registration, mUserLocations should be updated !!!!!
     private void setUserPosition() {
         for (UserLocation userLocation : mUserLocations) {
             if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
@@ -1149,7 +1149,8 @@ public class MapFragment extends Fragment implements
         });
     }
 
-    //    FIXME -> IT WILL FREEZE WHEN A NEW SCOOTER IS ADDED ON MAP
+    //    TODO -> WHEN A NEW SCOOTER IS ADDED ON MAP
+    //              THE SCOOTER DISAPPEARS AFTER 1 SECOND
     private void getChatroomUsers() {
 
         CollectionReference usersRef = mDb
