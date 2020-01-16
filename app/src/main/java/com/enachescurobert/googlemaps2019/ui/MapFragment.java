@@ -67,6 +67,7 @@ import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
 import com.google.maps.android.PolyUtil;
+import com.google.maps.android.SphericalUtil;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
@@ -794,39 +795,33 @@ public class MapFragment extends Fragment implements
 
                                 Log.d(TAG, "onClick: test1234 " + marker.getSnippet());
 
-                                //    TODO -> THE USER SHOULD START THE ENGINE ONLY IF IT'S REALLY CLOSE TO THE SCOOTER
                                 if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
-                                    isActive = true;
+                                    LatLng positionOfLoggedUser = new LatLng(mUserPosition.getGeoPoint().getLatitude(), mUserPosition.getGeoPoint().getLongitude());
+                                    LatLngBounds userRadius = toBounds(positionOfLoggedUser, 1000);
 
-                                    if (marker.getSnippet().contains("scuter6")) {
-                                        Log.d(TAG, "Scooter 6: STARTED");
-                                        Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
-                                        turnOnEngine();
+                                    if (userRadius.contains(marker.getPosition())) {
+
+                                        isActive = true;
+
+                                        if (marker.getSnippet().contains("scuter6")) {
+                                            Log.d(TAG, "Scooter 6: STARTED");
+                                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                                            turnOnEngine();
+                                        } else {
+                                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                                        }
+
+                                        generateParkingCode();
+
+                                        mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                                        mTimeAndTotal.setVisibility(View.VISIBLE);
+                                        startTimer(marker);
+
                                     } else {
-                                        Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getActivity(), "The moped is too far", Toast.LENGTH_SHORT).show();
                                     }
 
-                                    generateParkingCode();
-
-                                    mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                                    mTimeAndTotal.setVisibility(View.VISIBLE);
-                                    startTimer(marker);
-
-                                    //                            String latitude = String.valueOf(marker.getPosition().latitude);
-                                    //                            String longitude = String.valueOf(marker.getPosition().longitude);
-                                    //                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
-                                    //                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                                    //                            mapIntent.setPackage("com.google.android.apps.maps");
-                                    //
-                                    //                            try{
-                                    //                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                                    //                                    startActivity(mapIntent);
-                                    //                                }
-                                    //                            }catch (NullPointerException e) {
-                                    //                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
-                                    //                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
-                                    //                            }
                                 } else {
                                     Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
                                 }
@@ -1098,6 +1093,23 @@ public class MapFragment extends Fragment implements
         }
     }
 
+    /**
+     * Returns an LatLngBounds object that will be used
+     * to check if a LatLng is contained in this LatLngBounds
+     *
+     * @param  center  the LatLng item in which we'll center our item
+     * @param  radiusInMeters the radius of the circle around our point in meters
+     * @return      the LatLngBounds as a circle
+     * @see         LatLngBounds
+     */
+    public LatLngBounds toBounds(LatLng center, double radiusInMeters) {
+        double distanceFromCenterToCorner = radiusInMeters * Math.sqrt(2.0);
+        LatLng southwestCorner =
+                SphericalUtil.computeOffset(center, distanceFromCenterToCorner, 225.0);
+        LatLng northeastCorner =
+                SphericalUtil.computeOffset(center, distanceFromCenterToCorner, 45.0);
+        return new LatLngBounds(southwestCorner, northeastCorner);
+    }
 
     private void generateParkingCode() {
         String randomStr = array[new Random().nextInt(array.length)];
