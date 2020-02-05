@@ -371,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initSupportActionBar() {
-        setTitle("Licenta Enachescu Robert");
+        setTitle("Enachescu Robert");
     }
 
     @Override
