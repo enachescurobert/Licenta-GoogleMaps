@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,11 +37,14 @@ import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
 import com.enachescurobert.googlemaps2019.util.MyClusterManagerRenderer;
 import com.enachescurobert.googlemaps2019.util.ThingSpeakApi;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
@@ -50,6 +54,7 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
@@ -59,6 +64,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -137,6 +143,10 @@ public class MapFragment extends Fragment implements
     private TextView minutesPassed;
     private TextView totalPrice;
 
+    private Location currentLocation;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private static final int LOCATION_REQUEST_CODE =101;
+
     //for Google Directions API
     private GeoApiContext mGeoApiContext = null;
 
@@ -194,6 +204,12 @@ public class MapFragment extends Fragment implements
 
         setUserPosition();
 
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[] {android.Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+        }
+        fetchLastLocation();
+
 /*        TODO -> Check if any engine is still on
                   Continue the count
 */
@@ -233,7 +249,22 @@ public class MapFragment extends Fragment implements
         return view;
     }
 
-    public void zoomRoute(List<LatLng> lstLatLngRoute) {
+    private void fetchLastLocation() {
+        Task<Location> task = fusedLocationProviderClient.getLastLocation();
+        task.addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    currentLocation = location;
+                    Toast.makeText(getContext(), currentLocation.getLatitude() + " " + currentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+
+
+        public void zoomRoute(List<LatLng> lstLatLngRoute) {
 
         if (mGoogleMap == null || lstLatLngRoute == null || lstLatLngRoute.isEmpty()) return;
 
@@ -269,7 +300,7 @@ public class MapFragment extends Fragment implements
         Log.d(TAG, "calculateDirections: calculating directions.");
 
 //        TODO -> if (registered) -> update position
-//        setUserPosition();
+        setUserPosition();
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
                 marker.getPosition().latitude,
@@ -278,14 +309,27 @@ public class MapFragment extends Fragment implements
 
         DirectionsApiRequest directions = new DirectionsApiRequest(mGeoApiContext);
 
+
+
         //if you want to be able to show all the possible routes
         directions.alternatives(true);
-        directions.origin(
-                new com.google.maps.model.LatLng(
-                        mUserPosition.getGeoPoint().getLatitude(),
-                        mUserPosition.getGeoPoint().getLongitude()
+
+        if (mUserPosition == null) {
+            directions.origin(
+                    new com.google.maps.model.LatLng(
+                    currentLocation.getLatitude(),
+                    currentLocation.getLongitude()
                 )
-        );
+            );
+        } else {
+            directions.origin(
+                    new com.google.maps.model.LatLng(
+                            mUserPosition.getGeoPoint().getLatitude(),
+                            mUserPosition.getGeoPoint().getLongitude()
+                    )
+            );
+        }
+
         Log.d(TAG, "calculateDirections: destination: " + destination.toString());
         directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {
             @Override
@@ -797,10 +841,12 @@ public class MapFragment extends Fragment implements
 
                                 if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
 
-                                    LatLng positionOfLoggedUser = new LatLng(mUserPosition.getGeoPoint().getLatitude(), mUserPosition.getGeoPoint().getLongitude());
+                                    LatLng positionOfLoggedUser = mUserPosition != null ? new LatLng(mUserPosition.getGeoPoint().getLatitude(), mUserPosition.getGeoPoint().getLongitude()) : new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+
                                     LatLngBounds userRadius = toBounds(positionOfLoggedUser, 1000);
 
-                                    if (userRadius.contains(marker.getPosition())) {
+//                                    Delete comment if we want the engine to be turned only when the user is close
+//                                    if (userRadius.contains(marker.getPosition())) {
 
                                         isActive = true;
 
@@ -818,9 +864,9 @@ public class MapFragment extends Fragment implements
                                         mTimeAndTotal.setVisibility(View.VISIBLE);
                                         startTimer(marker);
 
-                                    } else {
-                                        Toast.makeText(getActivity(), "The moped is too far", Toast.LENGTH_SHORT).show();
-                                    }
+//                                    } else {
+//                                        Toast.makeText(getActivity(), "The moped is too far", Toast.LENGTH_SHORT).show();
+//                                    }
 
                                 } else {
                                     Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
