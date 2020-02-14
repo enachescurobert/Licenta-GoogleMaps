@@ -6,24 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.support.v7.widget.RecyclerView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/chatrooms_recycler_view">
-
-    </android.support.v7.widget.RecyclerView>
-
-    <android.support.design.widget.FloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="20dp"
-        android:elevation="6dp"
-        android:src="@drawable/ic_add_white_24dp"
-        android:id="@+id/fab_create_chatroom"
-        android:visibility="gone"/>
-
     <ProgressBar
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -35,42 +17,49 @@
         app:layout_constraintTop_toTopOf="parent"
         android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/search_cars"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginLeft="1dp"
-        android:layout_marginBottom="0dp"
-        android:text="See all cars"
-        app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
-        app:layout_constraintBottom_toTopOf="@+id/search_bykes"
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/seeAllButtons">
 
-        />
+        <Button
+            android:id="@+id/search_cars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginBottom="0dp"
+            android:text="See all cars"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/search_bykes"
 
-    <Button
-        android:id="@+id/search_bykes"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginLeft="1dp"
-        android:layout_marginBottom="0dp"
-        android:text="See all bykes"
-        app:layout_constraintBottom_toTopOf="@+id/start_our_map"
-        app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
-        />
+            />
 
-    <Button
-        android:id="@+id/start_our_map"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginLeft="1dp"
-        android:layout_marginBottom="0dp"
-        android:text="See all scooters"
-        app:layout_constraintBottom_toBottomOf="@+id/chatrooms_recycler_view"
-        app:layout_constraintStart_toStartOf="@+id/chatrooms_recycler_view"
-        />
+        <Button
+            android:id="@+id/search_bykes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginBottom="0dp"
+            android:text="See all bykes"
+            app:layout_constraintBottom_toTopOf="@+id/start_our_map"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
+        <Button
+            android:id="@+id/start_our_map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:layout_marginLeft="1dp"
+            android:layout_marginBottom="0dp"
+            android:text="See all scooters"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
+    </android.support.constraint.ConstraintLayout>
 
     <FrameLayout
         android:layout_width="match_parent"

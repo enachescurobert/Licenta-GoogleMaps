@@ -1,15 +1,16 @@
 package com.enachescurobert.googlemaps2019.ui;
 
 import android.Manifest;
-import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,8 +20,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,42 +31,59 @@ import android.widget.Toast;
 
 
 import com.enachescurobert.googlemaps2019.R;
-import com.enachescurobert.googlemaps2019.adapters.UserRecyclerAdapter;
 import com.enachescurobert.googlemaps2019.models.ClusterMarker;
 import com.enachescurobert.googlemaps2019.models.PolylineData;
 import com.enachescurobert.googlemaps2019.models.User;
 import com.enachescurobert.googlemaps2019.models.UserLocation;
 import com.enachescurobert.googlemaps2019.util.MyClusterManagerRenderer;
 import com.enachescurobert.googlemaps2019.util.ThingSpeakApi;
-import com.enachescurobert.googlemaps2019.util.ViewWeightAnimationWrapper;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
+import com.google.maps.android.PolyUtil;
+import com.google.maps.android.SphericalUtil;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -78,72 +94,67 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import static android.content.Context.MODE_PRIVATE;
 import static com.enachescurobert.googlemaps2019.Constants.MAPVIEW_BUNDLE_KEY;
 
 public class MapFragment extends Fragment implements
         OnMapReadyCallback,
         View.OnClickListener,
         GoogleMap.OnInfoWindowClickListener,
-        GoogleMap.OnPolylineClickListener,
-        UserRecyclerAdapter.UserListRecyclerClickListener
-{
+        GoogleMap.OnPolylineClickListener {
 
     //constants
     private static final String TAG = "MapFragment";
     private static final int LOCATION_UPDATE_INTERVAL = 3000; //3s
-    private static final int START_TIME_IN_MILLIS = 0;
-
-    private static final int MAP_LAYOUT_STATE_CONTRACTED = 0;
-    private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
-
+    private static final String SCOOTER_PREFS = "scooterPrefs";
+    private static final String ACTIVE_SCOOTER_USERNAME = "usernameOfStartedScooter";
+    private static final String NO_ACTIVE_SCOOTER = "no active scooter";
+    public LatLng testPoint = new LatLng(44.477, 26.161);
+    Dialog myDialog;
+    List<LatLng> polygonList = new ArrayList<LatLng>();
     //widgets
-    private RecyclerView mUserListRecyclerView;
     private RelativeLayout mMapContainer;
     private RelativeLayout mTimeAndTotal;
-
     private Button mStopTime;
-
     //UI component
     private MapView mMapView;
-
-    Dialog myDialog;
-
-
+    private ListenerRegistration mUserListEventListener;
     //vars
     private ArrayList<User> mUserList = new ArrayList<>();
     private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
-    private UserRecyclerAdapter mUserRecyclerAdapter;
     private GoogleMap mGoogleMap;
     private LatLngBounds mMapBoundary;
     private UserLocation mUserPosition;
     private ClusterManager mClusterManager;
     private MyClusterManagerRenderer mClusterManagerRenderer;
     private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
+    private boolean isActive = false;
     //Handler + Runnable -> Responsible for making requests every 3 seconds
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
-    private int mMapLayoutState = 1;
     private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
     private Marker mSelectedMarker = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
     private int minutes = 0;
     private int seconds = 0;
     private Timer myTimer;
-
     private ThingSpeakApi thingSpeakApi;
-
-
     //Paying info
     private TextView minutesPassed;
     private TextView totalPrice;
-    private TextView mParkingCode;
+
+    private Location currentLocation;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private static final int LOCATION_REQUEST_CODE =101;
 
     //for Google Directions API
     private GeoApiContext mGeoApiContext = null;
 
     private String[] array;
 
+    private FirebaseFirestore mDb;
 
+    private int usersCount = 0;
 
 
     public static MapFragment newInstance() {
@@ -153,20 +164,13 @@ public class MapFragment extends Fragment implements
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mUserList = getArguments().getParcelableArrayList(getString(R.string.intent_user_list));
-
-            //retreive the list of all the user locations who are in the chatroom
-            mUserLocations = getArguments().getParcelableArrayList(getString(R.string.intent_user_locations));
-        }
-
+        mDb = FirebaseFirestore.getInstance();
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
-        mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = (MapView) view.findViewById(R.id.user_list_map);
 
         minutesPassed = (TextView) view.findViewById(R.id.time_passed_value);
@@ -177,26 +181,17 @@ public class MapFragment extends Fragment implements
 
         array = getResources().getStringArray(R.array.array_codes_parking);
 
-
-        view.findViewById(R.id.btn_full_screen_map).setOnClickListener(this);
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
-
-        mMapContainer = view.findViewById(R.id.map_container);
 
 
 
         myDialog = new Dialog(getActivity());
         myDialog.setCanceledOnTouchOutside(false);
 
-
-
-
-        initUserListRecyclerView();
-
         initGoogleMap(savedInstanceState);
 
         try {
-            for(UserLocation userLocation : mUserLocations){
+            for (UserLocation userLocation : mUserLocations) {
                 Log.d(TAG,"onCreateView: user location: " +
                         userLocation.getUser().getUsername());
                 Log.d(TAG,"onCreateView: geopoint: " +
@@ -207,31 +202,69 @@ public class MapFragment extends Fragment implements
             Log.d(TAG, "onCreateView: ERROR -> " + e.getLocalizedMessage());
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         setUserPosition();
 
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[] {android.Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+        }
+        fetchLastLocation();
+
+/*        TODO -> Check if any engine is still on
+                  Continue the count
+*/
         mStopTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                stopTimer();
-                mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                mTimeAndTotal.setVisibility(View.GONE);
-                showPopup();
+                if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
+
+                    isActive = false;
+                    stopTimer();
+
+                    SharedPreferences prefs = getActivity().getSharedPreferences(SCOOTER_PREFS, MODE_PRIVATE);
+                    String tappedMarkerUsername = prefs.getString(ACTIVE_SCOOTER_USERNAME, NO_ACTIVE_SCOOTER);//"no active scooter is the default value.
+
+                    updateTimerOnServer(false, tappedMarkerUsername);
+
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString(ACTIVE_SCOOTER_USERNAME, NO_ACTIVE_SCOOTER);
+                    editor.apply();
+
+                    mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                    mTimeAndTotal.setVisibility(View.GONE);
+                    showPopup();
+                } else {
+                    Toast.makeText(getActivity(), "You are not in the green area", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
         Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl("https://api.thingspeak.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build();
+                .baseUrl("https://api.thingspeak.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
         thingSpeakApi = retrofit.create(ThingSpeakApi.class);
 
         return view;
     }
 
-    public void zoomRoute(List<LatLng> lstLatLngRoute) {
+    private void fetchLastLocation() {
+        Task<Location> task = fusedLocationProviderClient.getLastLocation();
+        task.addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    currentLocation = location;
+                    Toast.makeText(getContext(), currentLocation.getLatitude() + " " + currentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+
+
+        public void zoomRoute(List<LatLng> lstLatLngRoute) {
 
         if (mGoogleMap == null || lstLatLngRoute == null || lstLatLngRoute.isEmpty()) return;
 
@@ -249,22 +282,25 @@ public class MapFragment extends Fragment implements
         );
     }
 
-    private void removeTripMarkers(){
-        for(Marker marker: mTripMarkers){
+    private void removeTripMarkers() {
+        for (Marker marker: mTripMarkers) {
             marker.remove();
         }
     }
 
-    private void resetSelectedMarker(){
-        if(mSelectedMarker != null){
+    private void resetSelectedMarker() {
+        if(mSelectedMarker != null) {
             mSelectedMarker.setVisible(true);
             mSelectedMarker = null;
             removeTripMarkers();
         }
     }
 
-    private void calculateDirections(Marker marker){
+    private void calculateDirections(Marker marker) {
         Log.d(TAG, "calculateDirections: calculating directions.");
+
+//        TODO -> if (registered) -> update position
+        setUserPosition();
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
                 marker.getPosition().latitude,
@@ -273,14 +309,27 @@ public class MapFragment extends Fragment implements
 
         DirectionsApiRequest directions = new DirectionsApiRequest(mGeoApiContext);
 
+
+
         //if you want to be able to show all the possible routes
         directions.alternatives(true);
-        directions.origin(
-                new com.google.maps.model.LatLng(
-                        mUserPosition.getGeoPoint().getLatitude(),
-                        mUserPosition.getGeoPoint().getLongitude()
+
+        if (mUserPosition == null) {
+            directions.origin(
+                    new com.google.maps.model.LatLng(
+                    currentLocation.getLatitude(),
+                    currentLocation.getLongitude()
                 )
-        );
+            );
+        } else {
+            directions.origin(
+                    new com.google.maps.model.LatLng(
+                            mUserPosition.getGeoPoint().getLatitude(),
+                            mUserPosition.getGeoPoint().getLongitude()
+                    )
+            );
+        }
+
         Log.d(TAG, "calculateDirections: destination: " + destination.toString());
         directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {
             @Override
@@ -302,14 +351,14 @@ public class MapFragment extends Fragment implements
     }
 
     //This will be posted on the Main Thread
-    private void addPolylinesToMap(final DirectionsResult result){
+    private void addPolylinesToMap(final DirectionsResult result) {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
                 Log.d(TAG, "run: result routes: " + result.routes.length);
 
-                if(mPolyLinesData.size()>0){
-                    for(PolylineData polylineData: mPolyLinesData){
+                if (mPolyLinesData.size()>0) {
+                    for (PolylineData polylineData: mPolyLinesData) {
                         polylineData.getPolyline().remove();
                     }
                     mPolyLinesData.clear();
@@ -319,7 +368,7 @@ public class MapFragment extends Fragment implements
                 double duration = 999999;
 
                 //we get a google DirectionsRoute object
-                for(DirectionsRoute route: result.routes){
+                for (DirectionsRoute route: result.routes) {
                     Log.d(TAG, "run: leg: " + route.legs[0].toString());
 
                     //we get a decodedPath and that's going to have all the little points for each of the Polylines
@@ -328,9 +377,7 @@ public class MapFragment extends Fragment implements
                     List<LatLng> newDecodedPath = new ArrayList<>();
 
                     // This loops through all the LatLng coordinates of ONE polyline.
-                    for(com.google.maps.model.LatLng latLng: decodedPath){
-
-//                        Log.d(TAG, "run: latlng: " + latLng.toString());
+                    for (com.google.maps.model.LatLng latLng: decodedPath) {
 
                         newDecodedPath.add(new LatLng(
                                 latLng.lat,
@@ -346,7 +393,7 @@ public class MapFragment extends Fragment implements
 
 
                     double tempDuration = route.legs[0].duration.inSeconds;
-                    if(tempDuration < duration){
+                    if(tempDuration < duration) {
                         duration = tempDuration;
                         onPolylineClick(polyline);
                         zoomRoute(polyline.getPoints());
@@ -361,7 +408,7 @@ public class MapFragment extends Fragment implements
 
 
     //responsible for actually start the Runnable
-    private void startUserLocationsRunnable(){
+    private void startUserLocationsRunnable() {
         Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
         mHandler.postDelayed(mRunnable = new Runnable() {
             @Override
@@ -373,15 +420,15 @@ public class MapFragment extends Fragment implements
         }, LOCATION_UPDATE_INTERVAL);
     }
 
-    private void stopLocationUpdates(){
+    private void stopLocationUpdates() {
         mHandler.removeCallbacks(mRunnable);
     }
 
-    private void retrieveUserLocations(){
+    private void retrieveUserLocations() {
         Log.d(TAG, "retrieveUserLocations: retrieving location of all users in the chatroom.");
 
         try{
-            for(final ClusterMarker clusterMarker: mClusterMarkers){
+            for (final ClusterMarker clusterMarker: mClusterMarkers) {
 
                 DocumentReference userLocationRef = FirebaseFirestore.getInstance()
                         .collection(getString(R.string.collection_user_locations))
@@ -390,7 +437,7 @@ public class MapFragment extends Fragment implements
                 userLocationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if(task.isSuccessful()){
+                        if(task.isSuccessful()) {
 
                             final UserLocation updatedUserLocation = task.getResult().toObject(UserLocation.class);
 
@@ -418,17 +465,17 @@ public class MapFragment extends Fragment implements
                     }
                 });
             }
-        }catch (IllegalStateException e){
+        }catch (IllegalStateException e) {
             Log.e(TAG, "retrieveUserLocations: Fragment was destroyed during Firestore query. Ending query." + e.getMessage() );
         }
 
     }
 
-    private void resetMap(){
+    private void resetMap() {
         if(mGoogleMap != null) {
             mGoogleMap.clear();
 
-            if(mClusterManager != null){
+            if(mClusterManager != null) {
                 mClusterManager.clearItems();
             }
 
@@ -437,93 +484,134 @@ public class MapFragment extends Fragment implements
                 mClusterMarkers = new ArrayList<>();
             }
 
-            if(mPolyLinesData.size() > 0){
+            if(mPolyLinesData.size() > 0) {
                 mPolyLinesData.clear();
                 mPolyLinesData = new ArrayList<>();
             }
+
+            addMapPolygon();
+
+//            mGoogleMap.addCircle(new CircleOptions()
+//            .center(new LatLng(44.5068333, 26.2080217))
+//            .radius(900)
+//            .strokeWidth(1)
+//            .fillColor(Color.BLUE));
+
         }
     }
 
-    private void addMapMarkers(){
+    private void addMapPolygon() {
+        if(mGoogleMap != null) {
 
-        if(mGoogleMap != null){
-
-            resetMap();
-
-            if(mClusterManager == null){
-                mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
-            }
-            if(mClusterManagerRenderer == null){
-                mClusterManagerRenderer = new MyClusterManagerRenderer(
-                        getActivity(),
-                        mGoogleMap,
-                        mClusterManager
-                );
-                mClusterManager.setRenderer(mClusterManagerRenderer);
-            }
-
-            for(UserLocation userLocation: mUserLocations){
-                Log.d(TAG, "addMapMarkers: locations: " +
-                        userLocation.getGeoPoint().toString());
-                try{
-                    String snippet = "";
-                    if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
-                        snippet = "this is you";
-                    }
-                    else{
-                        snippet = "Determine route to " +
-                                userLocation.getUser().getUsername() + "?";
-                    }
-
-                    //int avatar = R.drawable.cwm_logo; //set the default avatar
-                    int avatar = R.drawable.scooter; //set the default avatar
-                    try{
-                        avatar = Integer.parseInt(userLocation.getUser().getAvatar());
-                    }catch (NumberFormatException e){
-                        Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
-                                ", setting default.");
-                    }
-                    ClusterMarker newClusterMarker = new ClusterMarker(
-                                    new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
-                                    userLocation.getUser().getUsername(),
-                                    snippet,
-                                    avatar,
-                                    userLocation.getUser()
-
-                    );
-
-                    String scuterSauUtilizator = userLocation.getUser().getUsername();
-
-                    if(scuterSauUtilizator.toString().contains("scuter")) {
-                        //to actually add the marker
-                        mClusterManager.addItem(newClusterMarker);
-                        //the cluster manager is the one who is actually displayed on the map
-                        mClusterMarkers.add(newClusterMarker);
-                        //the cluster marker is just a tool for us to keep the track of the markers on the map
-
-                        Log.d(TAG, "addMapMarkers: Added: " + userLocation.getUser().getUsername());
-
-                    }
-
-//                    if(scuterSauUtilizator.toString().contains("scuter6")) {
-//
-//
-//
-//
-//                    }
-
-                }catch (NullPointerException e){
-                    Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+            try {
+                for (int i = polygonList.size() - 1; i > 0; i--) {
+                    polygonList.remove(i);
                 }
+            } catch (Exception e) {
+                Log.d(TAG, "addMapMarkers: " + e.getLocalizedMessage());
             }
-            //to add everything to the map
-            mClusterManager.cluster();
-            //setCameraView();
 
+            polygonList.add(new LatLng(44.5045861, 26.0606003));
+            polygonList.add(new LatLng(44.5048310, 26.1622238));
+            polygonList.add(new LatLng(44.3830111, 26.1711502));
+            polygonList.add(new LatLng(44.3842379, 26.0595703));
+            polygonList.add(new LatLng(44.5055655, 26.0595703));
+
+
+
+            // Instantiates a new Polygon object and adds points to define a rectangle
+            PolygonOptions rectOptions = new PolygonOptions()
+                    //                    .add(new LatLng(44.5045861, 26.0606003),
+                    //                            new LatLng(44.5048310, 26.1622238),
+                    //                            new LatLng(44.3830111, 26.1711502),
+                    //                            new LatLng(44.3842379, 26.0595703),
+                    //                            new LatLng(44.5055655, 26.0595703))
+                    .add(polygonList.get(0),
+                            polygonList.get(1),
+                            polygonList.get(2),
+                            polygonList.get(3),
+                            polygonList.get(4)
+                    )
+                    .fillColor(Color.argb(20, 0, 252, 0))
+                    .strokeColor(Color.rgb(0, 50, 100))
+                    .strokeWidth(3);
+
+            mGoogleMap.addPolygon(rectOptions);
         }
     }
 
-    private void setCameraView(){
+    private void addMapMarkers() {
+
+        resetMap();
+
+        if(mClusterManager == null) {
+            mClusterManager = new ClusterManager<ClusterMarker>(getActivity().getApplicationContext(), mGoogleMap);
+        }
+        if(mClusterManagerRenderer == null) {
+            mClusterManagerRenderer = new MyClusterManagerRenderer(
+                    getActivity(),
+                    mGoogleMap,
+                    mClusterManager
+            );
+            mClusterManager.setRenderer(mClusterManagerRenderer);
+        }
+
+        for (UserLocation userLocation: mUserLocations) {
+            Log.d(TAG, "addMapMarkers: locations: " +
+                    userLocation.getGeoPoint().toString());
+            try{
+                String snippet = "";
+                if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
+                    snippet = "this is you";
+                }
+                else{
+                    snippet = "Determine route to " +
+                            userLocation.getUser().getUsername() + "?";
+                }
+
+                //int avatar = R.drawable.cwm_logo; //set the default avatar
+                int avatar = R.drawable.scooter; //set the default avatar
+                try{
+                    avatar = Integer.parseInt(userLocation.getUser().getAvatar());
+                } catch (NumberFormatException e) {
+                    Log.d(TAG, "addMapMarkers: no avatar for " + userLocation.getUser().getUsername() +
+                            ", setting default.");
+                }
+                ClusterMarker newClusterMarker = new ClusterMarker(
+                        new LatLng(userLocation.getGeoPoint().getLatitude(), userLocation.getGeoPoint().getLongitude()),
+                        userLocation.getUser().getUsername(),
+                        snippet,
+                        avatar,
+                        userLocation.getUser()
+
+                );
+
+                String scuterSauUtilizator = userLocation.getUser().getUsername();
+
+                if(scuterSauUtilizator.toString().contains("scuter")) {
+                    //to actually add the marker
+                    mClusterManager.addItem(newClusterMarker);
+                    //the cluster manager is the one who is actually displayed on the map
+                    mClusterMarkers.add(newClusterMarker);
+                    //the cluster marker is just a tool for us to keep the track of the markers on the map
+
+                    Log.d(TAG, "addMapMarkers: Added: " + userLocation.getUser().getUsername());
+
+                }
+
+            }catch (NullPointerException e) {
+                Log.d(TAG, "addMapMarkers: NullPointerException: " + e.getMessage());
+            }
+        }
+        //to add everything to the map
+        try {
+            mClusterManager.cluster();
+        } catch (Exception e) {
+            Log.e(TAG, "mClusterManager issue: " + e.getLocalizedMessage());
+        }
+    }
+
+    private void setCameraView() {
 
         //we want to define the top right and bottom left for our boundary
         //Overall map view window: 0.2 * 0.2 = 0.04
@@ -534,16 +622,20 @@ public class MapFragment extends Fragment implements
         double rightBoundary = mUserPosition.getGeoPoint().getLongitude() + .1;
 
         mMapBoundary = new LatLngBounds(
-            new LatLng(bottomBoundary, leftBoundary),
-            new LatLng(topBoundary, rightBoundary)
+                new LatLng(bottomBoundary, leftBoundary),
+                new LatLng(topBoundary, rightBoundary)
         );
 
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary,0));
     }
 
-    private void setUserPosition(){
-        for(UserLocation userLocation : mUserLocations){
-            if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())){
+//    TODO ->
+    // mUserPosition is null
+    // setUserPosition won't work because
+    // after registration, mUserLocations should be updated !!!!!
+    private void setUserPosition() {
+        for (UserLocation userLocation : mUserLocations) {
+            if(userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
                 mUserPosition = userLocation;
             }
         }
@@ -565,20 +657,12 @@ public class MapFragment extends Fragment implements
 
         //that's going to instantiate our Google API context object
         //which is what we use to calculate directions
-        if(mGeoApiContext == null){
+        if(mGeoApiContext == null) {
             mGeoApiContext = new GeoApiContext.Builder()
                     .apiKey(getString(R.string.google_map_api_key))
                     .build();
         }
 
-    }
-
-
-    private void initUserListRecyclerView() {
-        //this will refer to the interface UserRecyclerAdapter
-        mUserRecyclerAdapter = new UserRecyclerAdapter(mUserList, this);
-        mUserListRecyclerView.setAdapter(mUserRecyclerAdapter);
-        mUserListRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
     }
 
     @Override
@@ -657,13 +741,22 @@ public class MapFragment extends Fragment implements
         map.setMyLocationEnabled(true);
         //map.getUiSettings().setMyLocationButtonEnabled(false);
 
+//        map.setTrafficEnabled(true);
+
+        LatLngBounds latLngBounds= new LatLngBounds(
+                        new LatLng(44.3400563,  25.9503937),
+                        new LatLng(44.5393453, 26.2511444));
+
+        map.setLatLngBoundsForCameraTarget(latLngBounds);
+
         mGoogleMap = map;
         //setCameraView();
+
+        getChatroomUsers();
 
         //Now all the polyline clicks will be intercepted by the method 'onPolylineClick'
         mGoogleMap.setOnPolylineClickListener(this);
 
-        addMapMarkers();
 
         //we pass 'this' to refer to the interface
         mGoogleMap.setOnInfoWindowClickListener(this);
@@ -678,7 +771,15 @@ public class MapFragment extends Fragment implements
 
         mGoogleMap.setMinZoomPreference(10.0f); // Set a preference for minimum zoom (Zoom out).
         mGoogleMap.setMaxZoomPreference(17.0f); // Set a preference for maximum zoom (Zoom In).
+
+        //        Polygon polygon = mGoogleMap.addPolygon(rectOptions);
+
+        //        addMapMarkers();
+
+
+
     }
+
 
     @Override
     public void onPause() {
@@ -705,64 +806,13 @@ public class MapFragment extends Fragment implements
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.btn_full_screen_map:{
-
-                if(mMapLayoutState == MAP_LAYOUT_STATE_CONTRACTED){
-                    mMapLayoutState = MAP_LAYOUT_STATE_EXPANDED;
-                    expandMapAnimation();
-                }
-                else if(mMapLayoutState == MAP_LAYOUT_STATE_EXPANDED){
-                    mMapLayoutState = MAP_LAYOUT_STATE_CONTRACTED;
-                    contractMapAnimation();
-                }
-                break;
-            }
-
-            case R.id.btn_reset_map:{
+        if (v.getId() == R.id.btn_reset_map) {
+            if (mGoogleMap == null) {
+                getActivity().recreate();
+            } else {
                 addMapMarkers();
-                break;
             }
-
         }
-    }
-
-    private void expandMapAnimation(){
-        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
-        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
-                "weight",
-                50,
-                100);
-        mapAnimation.setDuration(800);
-
-        ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
-        ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
-                "weight",
-                50,
-                0);
-        recyclerAnimation.setDuration(800);
-
-        recyclerAnimation.start();
-        mapAnimation.start();
-    }
-
-    private void contractMapAnimation(){
-        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
-        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
-                "weight",
-                100,
-                50);
-        mapAnimation.setDuration(800);
-
-        ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
-        ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
-                "weight",
-                0,
-                50);
-        recyclerAnimation.setDuration(800);
-
-        recyclerAnimation.start();
-        mapAnimation.start();
     }
 
     @Override
@@ -770,7 +820,7 @@ public class MapFragment extends Fragment implements
 
 
 
-        if(marker.getTitle().contains("Route #")){
+        if(marker.getTitle().contains("Route #")) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setMessage("Do you really want to start the engine of the scooter? \n\nWe charge: 0.5$/minute + 1$ when engine starts")
                     .setCancelable(true)
@@ -778,40 +828,50 @@ public class MapFragment extends Fragment implements
                         public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
 
 
-//                            startEngine();
+                            //                            startEngine();
 
-                            Log.d(TAG, "onClick: test1234 " + marker.getSnippet() );
+                            if (isActive) {
+                                Toast.makeText(getActivity(), "YOU ALREADY HAVE ONE RENTED MOPED", Toast.LENGTH_SHORT).show();
+                            } else {
 
-                            if (marker.getSnippet().contains("scuter6")){
-                                Log.d(TAG, "Scooter 6: STARTED");
-                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
-                                turnOnEngine();
-                            }else{
-                                Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
 
+                                testPoint = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+
+                                Log.d(TAG, "onClick: test1234 " + marker.getSnippet());
+
+                                if (PolyUtil.containsLocation(testPoint, polygonList, false)) {
+
+                                    LatLng positionOfLoggedUser = mUserPosition != null ? new LatLng(mUserPosition.getGeoPoint().getLatitude(), mUserPosition.getGeoPoint().getLongitude()) : new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+
+                                    LatLngBounds userRadius = toBounds(positionOfLoggedUser, 1000);
+
+//                                    Delete comment if we want the engine to be turned only when the user is close
+//                                    if (userRadius.contains(marker.getPosition())) {
+
+                                        isActive = true;
+
+                                        if (marker.getSnippet().contains("scuter6")) {
+                                            Log.d(TAG, "Scooter 6: STARTED");
+                                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE \nOF SCOOTER 6", Toast.LENGTH_SHORT).show();
+                                            turnOnEngine();
+                                        } else {
+                                            Toast.makeText(getActivity(), "YOU STARTED THE ENGINE", Toast.LENGTH_SHORT).show();
+                                        }
+
+                                        generateParkingCode();
+
+                                        mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
+                                        mTimeAndTotal.setVisibility(View.VISIBLE);
+                                        startTimer(marker);
+
+//                                    } else {
+//                                        Toast.makeText(getActivity(), "The moped is too far", Toast.LENGTH_SHORT).show();
+//                                    }
+
+                                } else {
+                                    Toast.makeText(getActivity(), "The moped is not in the green area", Toast.LENGTH_SHORT).show();
+                                }
                             }
-
-                            generateParkingCode();
-
-                            mTimeAndTotal = (RelativeLayout) getActivity().findViewById(R.id.time_and_total);
-                            mTimeAndTotal.setVisibility(View.VISIBLE);
-                            startTimer();
-
-//                            String latitude = String.valueOf(marker.getPosition().latitude);
-//                            String longitude = String.valueOf(marker.getPosition().longitude);
-//                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
-//                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-//                            mapIntent.setPackage("com.google.android.apps.maps");
-//
-//                            try{
-//                                if (mapIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-//                                    startActivity(mapIntent);
-//                                }
-//                            }catch (NullPointerException e){
-//                                Log.e(TAG, "onClick: NullPointerException: Couldn't open map." + e.getMessage() );
-//                                Toast.makeText(getActivity(), "Couldn't open map", Toast.LENGTH_SHORT).show();
-//                            }
-
                         }
                     })
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -823,7 +883,7 @@ public class MapFragment extends Fragment implements
             alert.show();
         }
         else{
-            if(marker.getSnippet().equals("This is you")){
+            if(marker.getSnippet().equals("This is you")) {
                 marker.hideInfoWindow();
             }
             else{
@@ -863,10 +923,10 @@ public class MapFragment extends Fragment implements
     public void onPolylineClick(Polyline polyline) {
 
         int index = 0;
-        for(PolylineData polylineData: mPolyLinesData){
+        for (PolylineData polylineData: mPolyLinesData) {
             index++;
             Log.d(TAG, "onPolylineClick: toString: " + polylineData.toString());
-            if(polyline.getId().equals(polylineData.getPolyline().getId())){
+            if(polyline.getId().equals(polylineData.getPolyline().getId())) {
                 polylineData.getPolyline().setColor(ContextCompat.getColor(getActivity(), R.color.blue1));
                 polylineData.getPolyline().setZIndex(1);
 
@@ -876,11 +936,11 @@ public class MapFragment extends Fragment implements
                         polylineData.getLeg().endLocation.lng
                 );
 
-//                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
-//                        .position(endLocation)
-//                        .title("Trip #" + index)
-//                        .snippet("Duration: " + polylineData.getLeg().duration)
-//                );
+                //                Marker marker = mGoogleMap.addMarker(new MarkerOptions()
+                //                        .position(endLocation)
+                //                        .title("Trip #" + index)
+                //                        .snippet("Duration: " + polylineData.getLeg().duration)
+                //                );
 
                 Marker marker = mGoogleMap.addMarker(new MarkerOptions()
                         .position(endLocation)
@@ -900,40 +960,70 @@ public class MapFragment extends Fragment implements
         }
     }
 
-    @Override
-    public void onUserClicked(int position) {
-        Log.d(TAG,"onUserClicked: selected a user: " + mUserList.get(position).getUser_id());
+    private void updateTimerOnServer(boolean shouldStartEngine, String markerUsername) {
 
-        String selectedUserId = mUserList.get(position).getUser_id();
-        for(ClusterMarker clusterMarker: mClusterMarkers){
-            if(selectedUserId.equals(clusterMarker.getUser().getUser_id())){
-                mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(
-                        new LatLng(clusterMarker.getPosition().latitude, clusterMarker.getPosition().longitude)),
-                        600,
-                        null
-                );
-                break;
+        for (final ClusterMarker clusterMarker: mClusterMarkers) {
+
+            if (clusterMarker.getUser().getUsername().equals(markerUsername)) {
+
+                //Update the Users collection
+                FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                        .setTimestampsInSnapshotsEnabled(true)
+                        .build();
+                mDb.setFirestoreSettings(settings);
+
+                DocumentReference userRef = mDb
+                        .collection(getString(R.string.collection_users))
+                        .document(clusterMarker.getUser().getUser_id());
+
+                userRef.update(getString(R.string.collection_field_engine_started), shouldStartEngine);
+                Date currentDate = new Date();
+                userRef.update(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+
+                //Update the User Locations collection
+                DocumentReference locationRef = mDb
+                        .collection(getString(R.string.collection_user_locations))
+                        .document(clusterMarker.getUser().getUser_id());
+
+                Map<String, Object> userLocationsDocument = new HashMap<>();
+                Map<String, Object> userField = new HashMap<>();
+                userField.put(getString(R.string.collection_field_engine_started), shouldStartEngine);
+                userField.put(getString(R.string.collection_field_engine_started_at), shouldStartEngine ? currentDate : null);
+                userLocationsDocument.put("user", userField);
+                locationRef.set(userLocationsDocument, SetOptions.merge());
+
             }
+
         }
+
     }
 
-    private void startTimer(){
+    private void startTimer(Marker marker) {
 
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(SCOOTER_PREFS, MODE_PRIVATE).edit();
 
-//        minutesPassed;
-//        totalPrice;
+        String marketSnippet = marker.getSnippet();
+        String markerUsername = marketSnippet.substring(marketSnippet.lastIndexOf(" ") + 1);
 
-        addMapMarkers();
+        editor.putString(ACTIVE_SCOOTER_USERNAME, markerUsername);
+        editor.apply();
+
+        updateTimerOnServer(true, markerUsername);
 
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
             @Override
             public void run() {
+
+                if (getActivity() == null) {
+                    return;
+                }
+
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
 
-                        if(seconds==59){
+                        if(seconds==59) {
                             minutes++;
                             seconds =0;
                             minutesPassed.setText(minutes + ":" +seconds);
@@ -952,7 +1042,7 @@ public class MapFragment extends Fragment implements
     }
 
 
-    private void stopTimer(){
+    private void stopTimer() {
         if(myTimer != null) {
             myTimer.cancel();
         }
@@ -969,7 +1059,7 @@ public class MapFragment extends Fragment implements
 
         minutesPassedPopup = (TextView) myDialog.findViewById(R.id.minutes_passed);
 
-        if(minutes == 1){
+        if(minutes == 1) {
             minutesPassedPopup.setText(String.valueOf("One minute"));
         }else {
             minutesPassedPopup.setText(String.valueOf(minutes + " minutes"));
@@ -1042,22 +1132,39 @@ public class MapFragment extends Fragment implements
             //no error, so start intent
             startActivity(Intent.createChooser(mEmailIntent, "Send email"));
         }
-        catch (Exception e){
+        catch (Exception e) {
             //if anything goes wrong e.g no internet or email client
             //get and show exception
             Toast.makeText(getActivity(),e.getMessage(),Toast.LENGTH_SHORT).show();
         }
     }
 
+    /**
+     * Returns an LatLngBounds object that will be used
+     * to check if a LatLng is contained in this LatLngBounds
+     *
+     * @param  center  the LatLng item in which we'll center our item
+     * @param  radiusInMeters the radius of the circle around our point in meters
+     * @return      the LatLngBounds as a circle
+     * @see         LatLngBounds
+     */
+    public LatLngBounds toBounds(LatLng center, double radiusInMeters) {
+        double distanceFromCenterToCorner = radiusInMeters * Math.sqrt(2.0);
+        LatLng southwestCorner =
+                SphericalUtil.computeOffset(center, distanceFromCenterToCorner, 225.0);
+        LatLng northeastCorner =
+                SphericalUtil.computeOffset(center, distanceFromCenterToCorner, 45.0);
+        return new LatLngBounds(southwestCorner, northeastCorner);
+    }
 
-    private void generateParkingCode(){
+    private void generateParkingCode() {
         String randomStr = array[new Random().nextInt(array.length)];
 
         TextView mParkingCode = (TextView) getActivity().findViewById(R.id.parking_code);
 
         try {
             mParkingCode.setText(randomStr);
-        }catch (Exception e){
+        }catch (Exception e) {
             Log.e(TAG, "generateParkingCode: " + e.getMessage());
         }
         Log.d(TAG, "generateParkingCode: the generated code is " + randomStr);
@@ -1100,24 +1207,79 @@ public class MapFragment extends Fragment implements
         });
     }
 
+    //    TODO -> WHEN A NEW SCOOTER IS ADDED ON MAP
+    //              THE SCOOTER DISAPPEARS AFTER 1 SECOND
+    private void getChatroomUsers() {
+
+        CollectionReference usersRef = mDb
+                //.collection(getString(R.string.collection_chatrooms))
+                //.document(mChatroom.getChatroom_id())
+                //.document("xwT2T8sasZEaY5g0cwf2")
+                //.collection(getString(R.string.collection_chatroom_user_list));
+                .collection(getString(R.string.collection_users));
+
+        mUserListEventListener = usersRef
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@javax.annotation.Nullable QuerySnapshot queryDocumentSnapshots, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.e(TAG, "onEvent: Listen failed.", e);
+                            return;
+                        }
+
+                        if(queryDocumentSnapshots != null) {
+
+                            // Clear the list and add all the users again
+                            mUserList.clear();
+                            mUserList = new ArrayList<>();
+
+                            for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                                User user = doc.toObject(User.class);
+                                mUserList.add(user);
+
+                                //
+                                getUserLocation(user);
+
+                            }
+
+                            Log.d(TAG, "onEvent: user list size: " + mUserList.size());
+                        }
+                    }
+                });
+    }
+
+    private void getUserLocation(User user) {
+        DocumentReference locationRef = mDb
+                .collection(getString(R.string.collection_user_locations))
+                .document(user.getUser_id());
+
+        locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()) {
+                    //if the task is successful
+                    //we can retrieve a result
+                    if(task.getResult().toObject(UserLocation.class) != null) {
+                        //if there is actually a location coordinate of the user in the DB
+                        //<<which it should have (because the user has to accept GPS)>>
+                        //add that location
+                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+
+                        usersCount++;
+
+                    //  The markers will be added on the map only after the final
+                    //  onComplete is called
+                        if ( mUserList.size()  == usersCount ) {
+                            addMapMarkers();
+                            usersCount = 0;
+                        }
+
+                        //now we need to pass those locations in the fragment
+                        //that will be done in the inflateUserListFragment() method
+                    }
+                }
+            }
+        });
+    }
+
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

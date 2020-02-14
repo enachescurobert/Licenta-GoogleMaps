@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 
 import com.bumptech.glide.Glide;
@@ -30,6 +31,8 @@ public class ProfileActivity extends AppCompatActivity implements
     //widgets
     private CircleImageView mAvatarImage;
 
+    private TextView mUsernameTextView;
+
     //vars
     private ImageListFragment mImageListFragment;
 
@@ -41,11 +44,13 @@ public class ProfileActivity extends AppCompatActivity implements
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         mAvatarImage = findViewById(R.id.image_choose_avatar);
+        mUsernameTextView = findViewById(R.id.usernameTextView);
 
         findViewById(R.id.image_choose_avatar).setOnClickListener(this);
         findViewById(R.id.text_choose_avatar).setOnClickListener(this);
 
         retrieveProfileImage();
+        mUsernameTextView.setText(((UserClient)getApplicationContext()).getUser().getUsername());
     }
 
     private void retrieveProfileImage(){
