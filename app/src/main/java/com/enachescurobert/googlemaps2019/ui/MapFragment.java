@@ -1249,37 +1249,46 @@ public class MapFragment extends Fragment implements
     }
 
     private void getUserLocation(User user) {
-        DocumentReference locationRef = mDb
-                .collection(getString(R.string.collection_user_locations))
-                .document(user.getUser_id());
+        if (isAdded()) {
+            if (getActivity() != null) {
+                DocumentReference locationRef = mDb
+                        .collection(getActivity().getString(R.string.collection_user_locations))
+                        .document(user.getUser_id());
 
-        locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if(task.isSuccessful()) {
-                    //if the task is successful
-                    //we can retrieve a result
-                    if(task.getResult().toObject(UserLocation.class) != null) {
-                        //if there is actually a location coordinate of the user in the DB
-                        //<<which it should have (because the user has to accept GPS)>>
-                        //add that location
-                        mUserLocations.add(task.getResult().toObject(UserLocation.class));
+                locationRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            //if the task is successful
+                            //we can retrieve a result
+                            if (task.getResult().toObject(UserLocation.class) != null) {
+                                //if there is actually a location coordinate of the user in the DB
+                                //<<which it should have (because the user has to accept GPS)>>
+                                //add that location
+                                mUserLocations.add(task.getResult().toObject(UserLocation.class));
 
-                        usersCount++;
+                                usersCount++;
 
-                    //  The markers will be added on the map only after the final
-                    //  onComplete is called
-                        if ( mUserList.size()  == usersCount ) {
-                            addMapMarkers();
-                            usersCount = 0;
+                                //  The markers will be added on the map only after the final
+                                //  onComplete is called
+                                if (mUserList.size() == usersCount) {
+                                    addMapMarkers();
+                                    usersCount = 0;
+                                }
+
+                                //now we need to pass those locations in the fragment
+                                //that will be done in the inflateUserListFragment() method
+                            }
                         }
-
-                        //now we need to pass those locations in the fragment
-                        //that will be done in the inflateUserListFragment() method
                     }
-                }
+                });
+            } else {
+                Log.e(TAG, "Activity is null.");
+                ((MainActivity) getActivity()).inflateUserListFragment();
             }
-        });
+        } else {
+            Log.e(TAG, "Fragment MapFragment not attached to a context.");
+        }
     }
 
 }
